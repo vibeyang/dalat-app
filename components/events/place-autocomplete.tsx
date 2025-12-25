@@ -23,6 +23,7 @@ interface PlaceAutocompleteProps {
 // 3. Session tokens: Bundle autocomplete + details into one billing session
 // 4. Restrict to Vietnam: Fewer results
 // 5. Limit fields: Only request what we need
+// 6. Lazy load: Only load Google Maps when user focuses input
 
 const DEBOUNCE_MS = 300;
 const MIN_CHARS = 3;
@@ -34,14 +35,18 @@ export function PlaceAutocomplete({ onPlaceSelect, defaultValue }: PlaceAutocomp
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(defaultValue || null);
   const [isReady, setIsReady] = useState(false);
+  const [isLoadingScript, setIsLoadingScript] = useState(false);
 
   const sessionToken = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scriptLoadedRef = useRef(false);
 
-  // Load Google Maps script with async loading
-  useEffect(() => {
+  // Load Google Maps script lazily (only when needed)
+  const loadGoogleMaps = useCallback(() => {
+    if (scriptLoadedRef.current || isReady) return;
+
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       console.error("Google Maps API key not found");
@@ -52,8 +57,28 @@ export function PlaceAutocomplete({ onPlaceSelect, defaultValue }: PlaceAutocomp
     if (typeof google !== "undefined" && google.maps?.places) {
       sessionToken.current = new google.maps.places.AutocompleteSessionToken();
       setIsReady(true);
+      scriptLoadedRef.current = true;
       return;
     }
+
+    // Check if script is already in DOM
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (existingScript) {
+      // Wait for it to load
+      const checkReady = setInterval(() => {
+        if (typeof google !== "undefined" && google.maps?.places) {
+          clearInterval(checkReady);
+          sessionToken.current = new google.maps.places.AutocompleteSessionToken();
+          setIsReady(true);
+          scriptLoadedRef.current = true;
+        }
+      }, 100);
+      setTimeout(() => clearInterval(checkReady), 5000);
+      return;
+    }
+
+    setIsLoadingScript(true);
+    scriptLoadedRef.current = true;
 
     // Load script asynchronously
     const script = document.createElement("script");
@@ -68,15 +93,22 @@ export function PlaceAutocomplete({ onPlaceSelect, defaultValue }: PlaceAutocomp
           clearInterval(checkReady);
           sessionToken.current = new google.maps.places.AutocompleteSessionToken();
           setIsReady(true);
+          setIsLoadingScript(false);
         }
       }, 100);
 
       // Timeout after 5 seconds
-      setTimeout(() => clearInterval(checkReady), 5000);
+      setTimeout(() => {
+        clearInterval(checkReady);
+        setIsLoadingScript(false);
+      }, 5000);
     };
 
     document.head.appendChild(script);
+  }, [isReady]);
 
+  // Cleanup debounce timer
+  useEffect(() => {
     return () => {
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
@@ -204,16 +236,18 @@ export function PlaceAutocomplete({ onPlaceSelect, defaultValue }: PlaceAutocomp
           type="text"
           value={query}
           onChange={handleInputChange}
-          onFocus={() => suggestions.length > 0 && setIsOpen(true)}
-          placeholder="Search for a place in Vietnam..."
+          onFocus={() => {
+            loadGoogleMaps(); // Lazy load on first focus
+            if (suggestions.length > 0) setIsOpen(true);
+          }}
+          placeholder={isLoadingScript ? "Loading..." : "Search for a place in Vietnam..."}
           className="pl-9 pr-9"
           autoComplete="off"
-          disabled={!isReady}
         />
-        {isLoading && (
+        {(isLoading || isLoadingScript) && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
         )}
-        {!isLoading && query && (
+        {!isLoading && !isLoadingScript && query && (
           <button
             type="button"
             onClick={handleClear}
