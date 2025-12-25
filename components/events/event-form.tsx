@@ -2,14 +2,17 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import type { Event } from "@/lib/types";
 
 interface EventFormProps {
   userId: string;
+  event?: Event;
 }
 
 function generateSlug(title: string): string {
@@ -22,10 +25,16 @@ function generateSlug(title: string): string {
   return `${base}-${suffix}`;
 }
 
-export function EventForm({ userId }: EventFormProps) {
+export function EventForm({ userId, event }: EventFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const isEditing = !!event;
+
+  // Parse existing event date/time for default values
+  const defaultDate = event ? format(new Date(event.starts_at), "yyyy-MM-dd") : "";
+  const defaultTime = event ? format(new Date(event.starts_at), "HH:mm") : "";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,34 +57,60 @@ export function EventForm({ userId }: EventFormProps) {
 
     const startsAt = new Date(`${date}T${time}`).toISOString();
     const capacity = capacityStr ? parseInt(capacityStr, 10) : null;
-    const slug = generateSlug(title);
 
     const supabase = createClient();
 
     startTransition(async () => {
-      const { data, error: insertError } = await supabase
-        .from("events")
-        .insert({
-          slug,
-          title,
-          description: description || null,
-          starts_at: startsAt,
-          location_name: locationName || null,
-          google_maps_url: googleMapsUrl || null,
-          external_chat_url: externalChatUrl || null,
-          capacity,
-          created_by: userId,
-          status: "published",
-        })
-        .select()
-        .single();
+      if (isEditing) {
+        // Update existing event
+        const { error: updateError } = await supabase
+          .from("events")
+          .update({
+            title,
+            description: description || null,
+            starts_at: startsAt,
+            location_name: locationName || null,
+            google_maps_url: googleMapsUrl || null,
+            external_chat_url: externalChatUrl || null,
+            capacity,
+          })
+          .eq("id", event.id);
 
-      if (insertError) {
-        setError(insertError.message);
-        return;
+        if (updateError) {
+          setError(updateError.message);
+          return;
+        }
+
+        router.push(`/events/${event.slug}`);
+        router.refresh();
+      } else {
+        // Create new event
+        const slug = generateSlug(title);
+
+        const { data, error: insertError } = await supabase
+          .from("events")
+          .insert({
+            slug,
+            title,
+            description: description || null,
+            starts_at: startsAt,
+            location_name: locationName || null,
+            google_maps_url: googleMapsUrl || null,
+            external_chat_url: externalChatUrl || null,
+            capacity,
+            created_by: userId,
+            status: "published",
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          setError(insertError.message);
+          return;
+        }
+
+        router.push(`/events/${data.slug}`);
       }
-
-      router.push(`/events/${data.slug}`);
     });
   }
 
@@ -90,6 +125,7 @@ export function EventForm({ userId }: EventFormProps) {
               id="title"
               name="title"
               placeholder="Coffee & Code"
+              defaultValue={event?.title ?? ""}
               required
             />
           </div>
@@ -101,6 +137,7 @@ export function EventForm({ userId }: EventFormProps) {
               id="description"
               name="description"
               placeholder="What's this event about?"
+              defaultValue={event?.description ?? ""}
               rows={4}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
@@ -110,11 +147,23 @@ export function EventForm({ userId }: EventFormProps) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="date">Date *</Label>
-              <Input id="date" name="date" type="date" required />
+              <Input
+                id="date"
+                name="date"
+                type="date"
+                defaultValue={defaultDate}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="time">Time *</Label>
-              <Input id="time" name="time" type="time" required />
+              <Input
+                id="time"
+                name="time"
+                type="time"
+                defaultValue={defaultTime}
+                required
+              />
             </div>
           </div>
 
@@ -125,6 +174,7 @@ export function EventForm({ userId }: EventFormProps) {
               id="location_name"
               name="location_name"
               placeholder="The Married Beans"
+              defaultValue={event?.location_name ?? ""}
             />
           </div>
 
@@ -136,6 +186,7 @@ export function EventForm({ userId }: EventFormProps) {
               name="google_maps_url"
               type="url"
               placeholder="https://maps.google.com/..."
+              defaultValue={event?.google_maps_url ?? ""}
             />
             <p className="text-xs text-muted-foreground">
               Paste a Google Maps link for the location
@@ -150,6 +201,7 @@ export function EventForm({ userId }: EventFormProps) {
               name="external_chat_url"
               type="url"
               placeholder="https://zalo.me/g/... or WhatsApp link"
+              defaultValue={event?.external_chat_url ?? ""}
             />
             <p className="text-xs text-muted-foreground">
               Zalo, WhatsApp, or Facebook group link
@@ -165,6 +217,7 @@ export function EventForm({ userId }: EventFormProps) {
               type="number"
               min="1"
               placeholder="Leave empty for unlimited"
+              defaultValue={event?.capacity ?? ""}
             />
             <p className="text-xs text-muted-foreground">
               Once full, new RSVPs go to a waitlist
@@ -176,7 +229,13 @@ export function EventForm({ userId }: EventFormProps) {
           )}
 
           <Button type="submit" disabled={isPending} className="w-full">
-            {isPending ? "Creating..." : "Create event"}
+            {isPending
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save changes"
+                : "Create event"}
           </Button>
         </CardContent>
       </Card>

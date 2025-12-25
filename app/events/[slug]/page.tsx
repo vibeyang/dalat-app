@@ -3,9 +3,9 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { ArrowLeft, Calendar, MapPin, Users, ExternalLink, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RsvpButton } from "@/components/events/rsvp-button";
+import { EventActions } from "@/components/events/event-actions";
 import type { Event, EventCounts, Rsvp, Profile } from "@/lib/types";
 
 interface PageProps {
@@ -70,12 +70,12 @@ async function getAttendees(eventId: string): Promise<(Rsvp & { profiles: Profil
   return (data ?? []) as (Rsvp & { profiles: Profile })[];
 }
 
-async function isLoggedIn(): Promise<boolean> {
+async function getCurrentUserId(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return !!user;
+  return user?.id ?? null;
 }
 
 export default async function EventPage({ params }: PageProps) {
@@ -86,12 +86,15 @@ export default async function EventPage({ params }: PageProps) {
     notFound();
   }
 
-  const [counts, currentRsvp, attendees, loggedIn] = await Promise.all([
+  const [counts, currentRsvp, attendees, currentUserId] = await Promise.all([
     getEventCounts(event.id),
     getCurrentUserRsvp(event.id),
     getAttendees(event.id),
-    isLoggedIn(),
+    getCurrentUserId(),
   ]);
+
+  const isLoggedIn = !!currentUserId;
+  const isCreator = currentUserId === event.created_by;
 
   const spotsText = event.capacity
     ? `${counts?.going_spots ?? 0}/${event.capacity}`
@@ -101,7 +104,7 @@ export default async function EventPage({ params }: PageProps) {
     <main className="min-h-screen">
       {/* Header */}
       <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 max-w-4xl items-center mx-auto px-4">
+        <div className="container flex h-14 max-w-4xl items-center justify-between mx-auto px-4">
           <Link
             href="/"
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -109,6 +112,9 @@ export default async function EventPage({ params }: PageProps) {
             <ArrowLeft className="w-4 h-4" />
             <span>Back</span>
           </Link>
+          {isCreator && (
+            <EventActions eventId={event.id} eventSlug={event.slug} />
+          )}
         </div>
       </nav>
 
@@ -138,7 +144,7 @@ export default async function EventPage({ params }: PageProps) {
             </div>
 
             {/* Attendees */}
-            {loggedIn && attendees.length > 0 && (
+            {isLoggedIn && attendees.length > 0 && (
               <Card>
                 <CardContent className="p-4">
                   <h3 className="font-semibold mb-3">
@@ -253,7 +259,7 @@ export default async function EventPage({ params }: PageProps) {
                   capacity={event.capacity}
                   goingSpots={counts?.going_spots ?? 0}
                   currentRsvp={currentRsvp}
-                  isLoggedIn={loggedIn}
+                  isLoggedIn={isLoggedIn}
                 />
               </CardContent>
             </Card>
