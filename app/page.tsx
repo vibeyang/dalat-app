@@ -57,7 +57,7 @@ async function EventsFeed() {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p className="mb-4">No upcoming events yet.</p>
-        <Link href="/events/new">
+        <Link href="/events/new" prefetch={false}>
           <Button>Create the first event</Button>
         </Link>
       </div>
@@ -83,7 +83,7 @@ export default function Home() {
             dalat.app
           </Link>
           <div className="flex items-center gap-2">
-            <Link href="/events/new">
+            <Link href="/events/new" prefetch={false}>
               <Button size="sm" variant="outline">
                 <Plus className="w-4 h-4 mr-1" />
                 Event

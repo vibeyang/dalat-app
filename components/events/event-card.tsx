@@ -19,7 +19,7 @@ export function EventCard({ event, counts }: EventCardProps) {
     : false;
 
   return (
-    <Link href={`/events/${event.slug}`}>
+    <Link href={`/events/${event.slug}`} prefetch={false}>
       <Card className="overflow-hidden hover:border-foreground/20 transition-colors">
         {event.image_url && (
           <div className="aspect-[2/1] relative overflow-hidden">
