@@ -27,6 +27,7 @@ export interface Event {
   description: string | null;
   image_url: string | null;
   location_name: string | null;
+  address: string | null;
   google_maps_url: string | null;
   external_chat_url: string | null;
   starts_at: string;

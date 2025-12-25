@@ -13,6 +13,7 @@ interface AddToCalendarProps {
   title: string;
   description?: string | null;
   locationName?: string | null;
+  address?: string | null;
   googleMapsUrl?: string | null;
   startsAt: string;
   endsAt?: string | null;
@@ -31,6 +32,7 @@ function generateGoogleCalendarUrl({
   title,
   description,
   locationName,
+  address,
   googleMapsUrl,
   startsAt,
   endsAt,
@@ -40,10 +42,12 @@ function generateGoogleCalendarUrl({
   // Default to 2 hours if no end time
   const end = endsAt ? new Date(endsAt) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
 
-  // Build location string with Da Lat suffix for better Google search results
-  // Include Google Maps URL in description instead since Calendar doesn't handle URLs well
+  // Use full address if available (best for Google Calendar search)
+  // Otherwise use location name with Da Lat suffix
   let location = "";
-  if (locationName) {
+  if (address) {
+    location = address;
+  } else if (locationName) {
     location = `${locationName}, Da Lat, Vietnam`;
   }
 
@@ -69,6 +73,7 @@ function generateICSContent({
   title,
   description,
   locationName,
+  address,
   googleMapsUrl,
   startsAt,
   endsAt,
@@ -79,10 +84,17 @@ function generateICSContent({
   const end = endsAt ? new Date(endsAt) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
   const now = new Date();
 
-  // For ICS, include both name and maps URL if available
-  const location = googleMapsUrl
-    ? `${locationName || ""} - ${googleMapsUrl}`.trim().replace(/^- /, "")
-    : locationName || "";
+  // For ICS, prefer address, then location name with maps URL
+  let location = "";
+  if (address) {
+    location = address;
+  } else if (locationName) {
+    location = googleMapsUrl
+      ? `${locationName} - ${googleMapsUrl}`
+      : locationName;
+  } else if (googleMapsUrl) {
+    location = googleMapsUrl;
+  }
 
   const icsContent = [
     "BEGIN:VCALENDAR",

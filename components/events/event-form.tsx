@@ -46,6 +46,7 @@ export function EventForm({ userId, event }: EventFormProps) {
     const date = formData.get("date") as string;
     const time = formData.get("time") as string;
     const locationName = formData.get("location_name") as string;
+    const address = formData.get("address") as string;
     const googleMapsUrl = formData.get("google_maps_url") as string;
     const externalChatUrl = formData.get("external_chat_url") as string;
     const capacityStr = formData.get("capacity") as string;
@@ -70,6 +71,7 @@ export function EventForm({ userId, event }: EventFormProps) {
             description: description || null,
             starts_at: startsAt,
             location_name: locationName || null,
+            address: address || null,
             google_maps_url: googleMapsUrl || null,
             external_chat_url: externalChatUrl || null,
             capacity,
@@ -95,6 +97,7 @@ export function EventForm({ userId, event }: EventFormProps) {
             description: description || null,
             starts_at: startsAt,
             location_name: locationName || null,
+            address: address || null,
             google_maps_url: googleMapsUrl || null,
             external_chat_url: externalChatUrl || null,
             capacity,
@@ -176,6 +179,20 @@ export function EventForm({ userId, event }: EventFormProps) {
               placeholder="The Married Beans"
               defaultValue={event?.location_name ?? ""}
             />
+          </div>
+
+          {/* Address */}
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              name="address"
+              placeholder="123 Nguyen Van Troi, Ward 1, Da Lat"
+              defaultValue={event?.address ?? ""}
+            />
+            <p className="text-xs text-muted-foreground">
+              Street address for Grab drivers
+            </p>
           </div>
 
           {/* Google Maps URL */}

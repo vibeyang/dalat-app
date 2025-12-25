@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RsvpButton } from "@/components/events/rsvp-button";
 import { EventActions } from "@/components/events/event-actions";
 import { AddToCalendar } from "@/components/events/add-to-calendar";
+import { CopyAddress } from "@/components/events/copy-address";
 import type { Event, EventCounts, Rsvp, Profile } from "@/lib/types";
 
 interface PageProps {
@@ -205,11 +206,16 @@ export default async function EventPage({ params }: PageProps) {
                 </div>
 
                 {/* Location */}
-                {event.location_name && (
+                {(event.location_name || event.address) && (
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">{event.location_name}</p>
+                    <div className="space-y-1">
+                      {event.location_name && (
+                        <p className="font-medium">{event.location_name}</p>
+                      )}
+                      {event.address && (
+                        <CopyAddress address={event.address} />
+                      )}
                       {event.google_maps_url && (
                         <a
                           href={event.google_maps_url}
@@ -268,6 +274,7 @@ export default async function EventPage({ params }: PageProps) {
                   title={event.title}
                   description={event.description}
                   locationName={event.location_name}
+                  address={event.address}
                   googleMapsUrl={event.google_maps_url}
                   startsAt={event.starts_at}
                   endsAt={event.ends_at}
