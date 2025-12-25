@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth-button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import { EventCard } from "@/components/events/event-card";
 import { Button } from "@/components/ui/button";
 import type { Event, EventCounts } from "@/lib/types";
@@ -132,9 +131,8 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t py-6">
-        <div className="container max-w-4xl mx-auto px-4 flex items-center justify-between text-sm text-muted-foreground">
+        <div className="container max-w-4xl mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>Events without the noise</p>
-          <ThemeSwitcher />
         </div>
       </footer>
     </main>
