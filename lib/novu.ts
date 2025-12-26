@@ -86,7 +86,7 @@ export async function notifyRsvpConfirmation(
 ) {
   const eventUrl = `${process.env.NEXT_PUBLIC_APP_URL}/events/${eventSlug}`;
 
-  await getNovu().trigger('rsvp-confirmation', {
+  await getNovu().trigger('rsvp', {
     to: { subscriberId },
     payload: {
       subject: translations.rsvpConfirmation[locale](eventTitle),
