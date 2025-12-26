@@ -51,7 +51,7 @@ export function ConfirmAttendanceHandler({ eventId }: Props) {
       await supabase.from('rsvp_cancellations').insert({
         event_id: eventId,
         reason,
-      }).catch(() => {});
+      });
     }
 
     setStatus(confirmed ? 'confirmed' : 'cancelled');
