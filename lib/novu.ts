@@ -74,6 +74,7 @@ const translations = {
     yes: { en: 'Yes, coming', fr: 'Oui', vi: 'Có, tôi đến' },
     no: { en: "Can't make it", fr: 'Non', vi: 'Không thể đến' },
     getDirections: { en: 'Get Directions', fr: 'Itinéraire', vi: 'Chỉ đường' },
+    changePlans: { en: 'Change plans', fr: 'Modifier', vi: 'Thay đổi' },
   },
 };
 
@@ -106,14 +107,14 @@ export async function notifyConfirmAttendance24h(
 ) {
   const baseUrl = `${process.env.NEXT_PUBLIC_APP_URL}/events/${eventSlug}`;
 
-  await getNovu().trigger('confirm-attendance-24h', {
+  await getNovu().trigger('24h-re-confirmation', {
     to: { subscriberId },
     payload: {
       subject: translations.confirmAttendance24h[locale](eventTitle, eventTime),
       primaryActionLabel: translations.buttons.yes[locale],
       primaryActionUrl: `${baseUrl}?confirm=yes`,
-      secondaryActionLabel: translations.buttons.no[locale],
-      secondaryActionUrl: `${baseUrl}?confirm=no`,
+      secondaryActionLabel: translations.buttons.changePlans[locale],
+      secondaryActionUrl: `${baseUrl}?cancel=true`,
     },
   });
 }
@@ -128,7 +129,7 @@ export async function notifyFinalReminder2h(
 ) {
   const eventUrl = `${process.env.NEXT_PUBLIC_APP_URL}/events/${eventSlug}`;
 
-  await getNovu().trigger('final-reminder-2h', {
+  await getNovu().trigger('2h-reminder', {
     to: { subscriberId },
     payload: {
       subject: translations.finalReminder2h[locale](eventTitle, locationName),
@@ -136,6 +137,8 @@ export async function notifyFinalReminder2h(
         ? translations.buttons.getDirections[locale]
         : translations.buttons.viewEvent[locale],
       primaryActionUrl: googleMapsUrl || eventUrl,
+      secondaryActionLabel: translations.buttons.changePlans[locale],
+      secondaryActionUrl: eventUrl,
     },
   });
 }
