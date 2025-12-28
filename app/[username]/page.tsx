@@ -56,7 +56,9 @@ async function isCurrentUser(profileId: string): Promise<boolean> {
 }
 
 export default async function ProfilePage({ params }: PageProps) {
-  const { username } = await params;
+  const { username: rawUsername } = await params;
+  // Strip @ prefix if present (supports both /@username and /username)
+  const username = rawUsername.startsWith("@") ? rawUsername.slice(1) : rawUsername;
   const profile = await getProfile(username);
 
   if (!profile) {
