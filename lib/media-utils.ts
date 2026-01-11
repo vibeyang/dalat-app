@@ -1,5 +1,16 @@
 // Media type detection and validation utilities
 
+// Default image paths
+const DEFAULT_IMAGE_PATHS = [
+  "/images/defaults/event-default-mobile.png",
+  "/images/defaults/event-default-desktop.png",
+];
+
+export function isDefaultImageUrl(url: string | null): boolean {
+  if (!url) return false;
+  return DEFAULT_IMAGE_PATHS.some((path) => url.includes(path));
+}
+
 export function isVideoUrl(url: string | null): boolean {
   if (!url) return false;
   return /\.(mp4|webm)$/i.test(url);

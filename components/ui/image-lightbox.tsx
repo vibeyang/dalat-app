@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface ImageLightboxProps {
   src: string;
@@ -12,12 +11,22 @@ interface ImageLightboxProps {
 }
 
 export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps) {
+  const [isLandscape, setIsLandscape] = useState(false);
+
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     },
     [onClose]
   );
+
+  const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth && img.naturalHeight) {
+      // Consider landscape if wider than tall (aspect ratio > 1)
+      setIsLandscape(img.naturalWidth > img.naturalHeight);
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,17 +39,34 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
     };
   }, [isOpen, handleEscape]);
 
+  // Reset state when closed
+  useEffect(() => {
+    if (!isOpen) {
+      setIsLandscape(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 overflow-hidden"
       onClick={onClose}
     >
+      {/* Blurred background for landscape images - creates immersive effect */}
+      {isLandscape && (
+        <img
+          src={src}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover scale-110 blur-3xl opacity-40"
+        />
+      )}
+
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+        className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
         aria-label="Close"
       >
         <X className="w-6 h-6 text-white" />
@@ -48,18 +74,19 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
 
       {/* Image container */}
       <div
-        className="relative max-w-[95vw] max-h-[95vh] flex items-center justify-center"
+        className="relative z-10 max-w-[95vw] max-h-[90vh] flex items-center justify-center"
         onClick={(e) => e.stopPropagation()}
       >
         <img
           src={src}
           alt={alt}
-          className="max-w-full max-h-[95vh] object-contain rounded-lg"
+          onLoad={handleImageLoad}
+          className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
         />
       </div>
 
       {/* Tap anywhere hint */}
-      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-sm">
+      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 text-white/50 text-sm">
         Tap anywhere to close
       </p>
     </div>

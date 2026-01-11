@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Users, Expand } from "lucide-react";
-import { ImageLightbox } from "@/components/ui/image-lightbox";
+import { Calendar, MapPin, Users } from "lucide-react";
 import { EventDefaultImage } from "@/components/events/event-default-image";
 import { ImmersiveImage } from "@/components/events/immersive-image";
 import { formatInDaLat } from "@/lib/timezone";
-import { isVideoUrl } from "@/lib/media-utils";
+import { isVideoUrl, isDefaultImageUrl } from "@/lib/media-utils";
 import type { Event, EventCounts } from "@/lib/types";
 
 interface EventCardImmersiveProps {
@@ -16,8 +14,6 @@ interface EventCardImmersiveProps {
 }
 
 export function EventCardImmersive({ event, counts }: EventCardImmersiveProps) {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-
   const spotsText = event.capacity
     ? `${counts?.going_spots ?? 0}/${event.capacity}`
     : `${counts?.going_spots ?? 0}`;
@@ -26,20 +22,20 @@ export function EventCardImmersive({ event, counts }: EventCardImmersiveProps) {
     ? (counts?.going_spots ?? 0) >= event.capacity
     : false;
 
-  const hasImage = !!event.image_url;
+  // Treat default image URLs as "no image" to use responsive EventDefaultImage
+  const hasCustomImage = !!event.image_url && !isDefaultImageUrl(event.image_url);
   const imageIsVideo = isVideoUrl(event.image_url);
 
   return (
-    <>
-      <article className="h-[100dvh] w-full relative flex flex-col snap-start bg-black">
-        {/* Flyer area - fills most of viewport */}
-        <button
-          type="button"
-          onClick={() => hasImage && !imageIsVideo && setLightboxOpen(true)}
-          className="flex-1 relative overflow-hidden"
-          aria-label={hasImage && imageIsVideo ? "Video preview" : "View full flyer"}
-        >
-          {hasImage ? (
+    <Link
+      href={`/events/${event.slug}`}
+      prefetch={false}
+      className="block h-[100dvh] w-full relative snap-start bg-black"
+    >
+      <article className="h-full w-full relative flex flex-col">
+        {/* Media area - fills most of viewport */}
+        <div className="flex-1 relative overflow-hidden">
+          {hasCustomImage ? (
             imageIsVideo ? (
               <video
                 src={event.image_url!}
@@ -50,29 +46,19 @@ export function EventCardImmersive({ event, counts }: EventCardImmersiveProps) {
                 autoPlay
               />
             ) : (
-              <ImmersiveImage src={event.image_url!} alt={event.title}>
-                {/* Expand icon - top right, below floating header */}
-                <div className="absolute top-16 right-4 bg-black/50 rounded-full p-2.5 z-20">
-                  <Expand className="w-5 h-5 text-white" />
-                </div>
-              </ImmersiveImage>
+              <ImmersiveImage src={event.image_url!} alt={event.title} />
             )
           ) : (
-            /* Default image when no event image is provided */
             <EventDefaultImage
               title={event.title}
               className="absolute inset-0 w-full h-full object-contain"
               priority
             />
           )}
-        </button>
+        </div>
 
-        {/* Info area with gradient overlay - clickable to event page */}
-        <Link
-          href={`/events/${event.slug}`}
-          prefetch={false}
-          className="absolute bottom-0 inset-x-0"
-        >
+        {/* Info area with gradient overlay */}
+        <div className="absolute bottom-0 inset-x-0">
           <div className="bg-gradient-to-t from-black via-black/80 to-transparent pt-20 pb-8 px-5">
             <h2 className="text-white font-semibold text-2xl mb-3 line-clamp-2 drop-shadow-lg">
               {event.title}
@@ -115,18 +101,8 @@ export function EventCardImmersive({ event, counts }: EventCardImmersiveProps) {
               </div>
             </div>
           </div>
-        </Link>
+        </div>
       </article>
-
-      {/* Lightbox for full image view */}
-      {hasImage && !imageIsVideo && (
-        <ImageLightbox
-          src={event.image_url!}
-          alt={event.title}
-          isOpen={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
-    </>
+    </Link>
   );
 }
