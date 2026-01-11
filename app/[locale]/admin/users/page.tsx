@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { UserManagementTable } from "@/components/admin/user-management-table";
 
+interface UserAuthData {
+  user_id: string;
+  last_sign_in_at: string | null;
+  login_count: number;
+}
+
 export default async function AdminUsersPage() {
   const supabase = await createClient();
 
@@ -26,11 +32,22 @@ export default async function AdminUsersPage() {
     redirect("/admin");
   }
 
-  // Fetch all users
-  const { data: users } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // Fetch all users and their auth data in parallel
+  const [usersResult, authDataResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase.rpc("get_users_with_login_stats"),
+  ]);
+
+  const users = usersResult.data || [];
+  const authData = (authDataResult.data || []) as UserAuthData[];
+
+  // Create a map of auth data by user_id
+  const authDataMap = new Map(
+    authData.map((item) => [item.user_id, item])
+  );
 
   return (
     <div className="space-y-6">
@@ -41,7 +58,7 @@ export default async function AdminUsersPage() {
         </p>
       </div>
 
-      <UserManagementTable users={users || []} />
+      <UserManagementTable users={users} authDataMap={authDataMap} />
     </div>
   );
 }

@@ -15,8 +15,15 @@ interface UpdateStatus {
   userId: string;
 }
 
+interface UserAuthData {
+  user_id: string;
+  last_sign_in_at: string | null;
+  login_count: number;
+}
+
 interface UserManagementTableProps {
   users: Profile[];
+  authDataMap: Map<string, UserAuthData>;
 }
 
 const ROLE_OPTIONS: UserRole[] = [
@@ -54,7 +61,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   user_not_found: "User not found",
 };
 
-export function UserManagementTable({ users }: UserManagementTableProps) {
+export function UserManagementTable({ users, authDataMap }: UserManagementTableProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
@@ -153,6 +160,12 @@ export function UserManagementTable({ users }: UserManagementTableProps) {
             <tr>
               <th className="text-left p-3 font-medium text-sm">User</th>
               <th className="text-left p-3 font-medium text-sm">Role</th>
+              <th className="text-left p-3 font-medium text-sm hidden md:table-cell">
+                Logins
+              </th>
+              <th className="text-left p-3 font-medium text-sm hidden lg:table-cell">
+                Last Login
+              </th>
               <th className="text-left p-3 font-medium text-sm hidden sm:table-cell">
                 Joined
               </th>
@@ -223,6 +236,25 @@ export function UserManagementTable({ users }: UserManagementTableProps) {
                         {status.message}
                       </div>
                     )}
+                  </div>
+                </td>
+                <td className="p-3 hidden md:table-cell">
+                  <div className="text-sm font-medium">
+                    {authDataMap.get(user.id)?.login_count ?? "—"}
+                  </div>
+                </td>
+                <td className="p-3 hidden lg:table-cell">
+                  <div className="text-sm text-muted-foreground">
+                    {authDataMap.get(user.id)?.last_sign_in_at
+                      ? new Date(
+                          authDataMap.get(user.id)!.last_sign_in_at!
+                        ).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })
+                      : "Never"}
                   </div>
                 </td>
                 <td className="p-3 hidden sm:table-cell">
