@@ -239,5 +239,46 @@
   },
   "time": {
     "daLat": "Da Lat"
+  },
+  "moments": {
+    "moments": "Moments",
+    "noMoments": "Pas encore de moments",
+    "beFirst": "Soyez le premier à partager un moment de cet événement !",
+    "shareYourMoment": "Partagez votre moment",
+    "postMoment": "Publier le moment",
+    "posting": "Publication...",
+    "addCaption": "Ajouter une légende...",
+    "captionPlaceholder": "Que se passe-t-il ?",
+    "uploadMedia": "Télécharger photo ou vidéo",
+    "textOnly": "Texte uniquement",
+    "pending": "En attente d'approbation",
+    "published": "Publié",
+    "viewMoments": "Voir les moments",
+    "viewAll": "Voir tous les moments",
+    "momentPosted": "Moment publié !",
+    "momentPending": "Votre moment est en attente d'approbation",
+    "whoCanPost": {
+      "anyone": "Tout le monde peut publier",
+      "rsvp": "Participants inscrits uniquement",
+      "confirmed": "Participants confirmés uniquement"
+    },
+    "settings": {
+      "title": "Paramètres des moments",
+      "enable": "Activer les moments",
+      "whoCanPost": "Qui peut publier ?",
+      "requireApproval": "Approbation requise",
+      "requireApprovalHelp": "Vérifier les moments avant publication"
+    },
+    "moderation": {
+      "pendingCount": "{count} en attente",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "remove": "Supprimer"
+    },
+    "errors": {
+      "notAllowed": "Vous n'avez pas la permission de publier ici",
+      "uploadFailed": "Échec du téléchargement. Veuillez réessayer.",
+      "postFailed": "Échec de publication. Veuillez réessayer."
+    }
   }
 }

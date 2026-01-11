@@ -323,4 +323,61 @@ export interface DashboardOverview {
   notifications: {
     users_with_push: number;
   };
+  sessions?: {
+    total_logins: number;
+    active_today: number;
+    last_login_at: string | null;
+  };
+}
+
+// ============================================
+// Moments UGC Types
+// ============================================
+
+export type MomentContentType = 'photo' | 'video' | 'text';
+export type MomentStatus = 'pending' | 'published' | 'rejected' | 'removed';
+export type MomentsWhoCanPost = 'anyone' | 'rsvp' | 'confirmed';
+
+export interface EventSettings {
+  event_id: string;
+  moments_enabled: boolean;
+  moments_who_can_post: MomentsWhoCanPost;
+  moments_require_approval: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Moment {
+  id: string;
+  event_id: string;
+  user_id: string;
+  content_type: MomentContentType;
+  media_url: string | null;
+  text_content: string | null;
+  status: MomentStatus;
+  moderation_note: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  profiles?: Profile;
+  events?: Event;
+}
+
+export interface MomentWithProfile {
+  id: string;
+  event_id: string;
+  user_id: string;
+  content_type: MomentContentType;
+  media_url: string | null;
+  text_content: string | null;
+  created_at: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
+export interface MomentCounts {
+  event_id: string;
+  published_count: number;
+  pending_count: number;
 }

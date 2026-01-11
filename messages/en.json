@@ -239,5 +239,46 @@
   },
   "time": {
     "daLat": "Da Lat"
+  },
+  "moments": {
+    "moments": "Moments",
+    "noMoments": "No moments yet",
+    "beFirst": "Be the first to share a moment from this event!",
+    "shareYourMoment": "Share your moment",
+    "postMoment": "Post moment",
+    "posting": "Posting...",
+    "addCaption": "Add a caption...",
+    "captionPlaceholder": "What's happening?",
+    "uploadMedia": "Upload photo or video",
+    "textOnly": "Text only",
+    "pending": "Pending approval",
+    "published": "Published",
+    "viewMoments": "View moments",
+    "viewAll": "View all moments",
+    "momentPosted": "Moment posted!",
+    "momentPending": "Your moment is pending approval",
+    "whoCanPost": {
+      "anyone": "Anyone can post",
+      "rsvp": "RSVPed attendees only",
+      "confirmed": "Confirmed attendees only"
+    },
+    "settings": {
+      "title": "Moments Settings",
+      "enable": "Enable moments",
+      "whoCanPost": "Who can post?",
+      "requireApproval": "Require approval",
+      "requireApprovalHelp": "Review moments before they appear publicly"
+    },
+    "moderation": {
+      "pendingCount": "{count} pending",
+      "approve": "Approve",
+      "reject": "Reject",
+      "remove": "Remove"
+    },
+    "errors": {
+      "notAllowed": "You don't have permission to post moments here",
+      "uploadFailed": "Failed to upload. Please try again.",
+      "postFailed": "Failed to post moment. Please try again."
+    }
   }
 }

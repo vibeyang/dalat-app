@@ -239,5 +239,46 @@
   },
   "time": {
     "daLat": "Đà Lạt"
+  },
+  "moments": {
+    "moments": "Khoảnh khắc",
+    "noMoments": "Chưa có khoảnh khắc nào",
+    "beFirst": "Hãy là người đầu tiên chia sẻ khoảnh khắc từ sự kiện này!",
+    "shareYourMoment": "Chia sẻ khoảnh khắc",
+    "postMoment": "Đăng khoảnh khắc",
+    "posting": "Đang đăng...",
+    "addCaption": "Thêm chú thích...",
+    "captionPlaceholder": "Điều gì đang xảy ra?",
+    "uploadMedia": "Tải ảnh hoặc video",
+    "textOnly": "Chỉ văn bản",
+    "pending": "Đang chờ duyệt",
+    "published": "Đã đăng",
+    "viewMoments": "Xem khoảnh khắc",
+    "viewAll": "Xem tất cả khoảnh khắc",
+    "momentPosted": "Đã đăng khoảnh khắc!",
+    "momentPending": "Khoảnh khắc đang chờ duyệt",
+    "whoCanPost": {
+      "anyone": "Bất kỳ ai cũng có thể đăng",
+      "rsvp": "Chỉ người đã đăng ký",
+      "confirmed": "Chỉ người đã xác nhận tham gia"
+    },
+    "settings": {
+      "title": "Cài đặt Khoảnh khắc",
+      "enable": "Bật khoảnh khắc",
+      "whoCanPost": "Ai có thể đăng?",
+      "requireApproval": "Yêu cầu duyệt",
+      "requireApprovalHelp": "Xem xét khoảnh khắc trước khi hiển thị công khai"
+    },
+    "moderation": {
+      "pendingCount": "{count} đang chờ",
+      "approve": "Duyệt",
+      "reject": "Từ chối",
+      "remove": "Xóa"
+    },
+    "errors": {
+      "notAllowed": "Bạn không có quyền đăng khoảnh khắc ở đây",
+      "uploadFailed": "Tải lên thất bại. Vui lòng thử lại.",
+      "postFailed": "Đăng khoảnh khắc thất bại. Vui lòng thử lại."
+    }
   }
 }

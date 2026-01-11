@@ -229,6 +229,33 @@ export async function getNotificationStats(): Promise<NotificationStats | null> 
 }
 
 // ============================================
+// Session Analytics
+// ============================================
+
+export interface SessionStats {
+  total_logins: number;
+  active_today: number;
+  last_login_at: string | null;
+}
+
+export async function getSessionStats(): Promise<SessionStats | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("get_session_stats");
+
+    if (error) {
+      console.error("Error fetching session stats:", error);
+      return null;
+    }
+
+    return data?.[0] ?? null;
+  } catch (e) {
+    console.error("Exception fetching session stats:", e);
+    return null;
+  }
+}
+
+// ============================================
 // Combined fetch for dashboard
 // ============================================
 
@@ -241,6 +268,7 @@ export interface FullDashboardData {
   verificationQueue: VerificationQueueStats | null;
   extractionStats: ExtractionStats | null;
   festivalStats: FestivalStats | null;
+  sessionStats: SessionStats | null;
 }
 
 export async function getFullDashboardData(): Promise<FullDashboardData> {
@@ -255,6 +283,7 @@ export async function getFullDashboardData(): Promise<FullDashboardData> {
       verificationQueue,
       extractionStats,
       festivalStats,
+      sessionStats,
     ] = await Promise.all([
       getDashboardOverview(),
       getUserGrowth(30),
@@ -264,6 +293,7 @@ export async function getFullDashboardData(): Promise<FullDashboardData> {
       getVerificationQueueStats(),
       getExtractionStats(),
       getFestivalStats(),
+      getSessionStats(),
     ]);
 
     return {
@@ -275,6 +305,7 @@ export async function getFullDashboardData(): Promise<FullDashboardData> {
       verificationQueue,
       extractionStats,
       festivalStats,
+      sessionStats,
     };
   } catch (e) {
     console.error("Exception fetching full dashboard data:", e);
@@ -288,6 +319,7 @@ export async function getFullDashboardData(): Promise<FullDashboardData> {
       verificationQueue: null,
       extractionStats: null,
       festivalStats: null,
+      sessionStats: null,
     };
   }
 }

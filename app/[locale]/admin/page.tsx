@@ -7,6 +7,8 @@ import {
   Bell,
   PartyPopper,
   ShieldCheck,
+  LogIn,
+  Clock,
 } from "lucide-react";
 import { getFullDashboardData } from "@/lib/admin/analytics";
 import {
@@ -33,7 +35,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Summary Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           title="Total Users"
           value={overview?.users?.total ?? 0}
@@ -49,6 +51,32 @@ export default async function AdminDashboard() {
                 }
               : undefined
           }
+        />
+        <StatCard
+          title="Connections"
+          value={dashboardData.sessionStats?.total_logins ?? 0}
+          subtitle={`${dashboardData.sessionStats?.active_today ?? 0} active today`}
+          icon={<LogIn className="h-6 w-6 text-primary" />}
+        />
+        <StatCard
+          title="Last Login"
+          value={
+            dashboardData.sessionStats?.last_login_at
+              ? new Date(dashboardData.sessionStats.last_login_at).toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })
+              : "—"
+          }
+          subtitle={
+            dashboardData.sessionStats?.last_login_at
+              ? new Date(dashboardData.sessionStats.last_login_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })
+              : "No data"
+          }
+          icon={<Clock className="h-6 w-6 text-primary" />}
         />
         <StatCard
           title="Published Events"
