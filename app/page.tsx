@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth-button";
 import { EventCard } from "@/components/events/event-card";
+import { EventFeedImmersive } from "@/components/events/event-feed-immersive";
 import { Button } from "@/components/ui/button";
 import type { Event, EventCounts } from "@/lib/types";
 
@@ -73,7 +74,7 @@ async function EventsFeed() {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2">
       {events.map((event) => (
         <EventCard key={event.id} event={event} counts={counts[event.id]} />
       ))}
@@ -83,16 +84,21 @@ async function EventsFeed() {
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col">
-      {/* Header */}
-      <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 max-w-4xl items-center justify-between mx-auto px-4">
-          <Link href="/" className="font-bold text-lg">
+    <>
+      {/* Mobile: Full immersive experience */}
+      <div className="lg:hidden h-[100dvh] relative">
+        {/* Floating mini-header */}
+        <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 via-black/40 to-transparent">
+          <Link href="/" className="font-bold text-white text-sm drop-shadow-lg">
             dalat.app
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/events/new" prefetch={false}>
-              <Button size="sm" variant="outline">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-white hover:bg-white/20 hover:text-white drop-shadow-lg"
+              >
                 <Plus className="w-4 h-4 mr-1" />
                 Event
               </Button>
@@ -101,40 +107,73 @@ export default function Home() {
               <AuthButton />
             </Suspense>
           </div>
-        </div>
-      </nav>
-
-      {/* Main content */}
-      <div className="flex-1 container max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Upcoming Events</h1>
-          <p className="text-muted-foreground">
-            Discover what&apos;s happening in Da Lat
-          </p>
-        </div>
+        </nav>
 
         <Suspense
           fallback={
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-48 bg-muted animate-pulse rounded-lg"
-                />
-              ))}
+            <div className="h-[100dvh] flex items-center justify-center bg-black">
+              <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             </div>
           }
         >
-          <EventsFeed />
+          <EventFeedImmersive />
         </Suspense>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t py-6">
-        <div className="container max-w-4xl mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>Made with ❤️ for Đà Lạt, Vietnam</p>
+      {/* Desktop: Traditional layout with header/footer */}
+      <main className="hidden lg:flex min-h-screen flex-col">
+        {/* Header */}
+        <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container flex h-14 max-w-4xl items-center justify-between mx-auto px-4">
+            <Link href="/" className="font-bold text-lg">
+              dalat.app
+            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/events/new" prefetch={false}>
+                <Button size="sm" variant="outline">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Event
+                </Button>
+              </Link>
+              <Suspense>
+                <AuthButton />
+              </Suspense>
+            </div>
+          </div>
+        </nav>
+
+        {/* Main content */}
+        <div className="flex-1 container max-w-4xl mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold mb-2">Upcoming Events</h1>
+            <p className="text-muted-foreground">
+              Discover what&apos;s happening in Da Lat
+            </p>
+          </div>
+
+          <Suspense
+            fallback={
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-80 bg-muted animate-pulse rounded-lg"
+                  />
+                ))}
+              </div>
+            }
+          >
+            <EventsFeed />
+          </Suspense>
         </div>
-      </footer>
-    </main>
+
+        {/* Footer */}
+        <footer className="border-t py-6">
+          <div className="container max-w-4xl mx-auto px-4 text-center text-sm text-muted-foreground">
+            <p>Made with ❤️ for Đà Lạt, Vietnam</p>
+          </div>
+        </footer>
+      </main>
+    </>
   );
 }

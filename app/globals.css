@@ -70,3 +70,12 @@
 a[href="https://novu.co"] {
   display: none !important;
 }
+
+/* Scrollbar hide utility for immersive scroll-snap */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
