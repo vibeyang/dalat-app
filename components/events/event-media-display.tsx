@@ -35,13 +35,13 @@ export function EventMediaDisplay({ src, alt }: EventMediaDisplayProps) {
       <button
         type="button"
         onClick={() => setLightboxOpen(true)}
-        className="w-full aspect-video rounded-lg overflow-hidden relative group cursor-pointer"
+        className="w-full rounded-lg overflow-hidden relative group cursor-pointer max-h-[60vh] md:aspect-video md:max-h-none"
         aria-label="View full flyer"
       >
         <img
           src={src}
           alt={alt}
-          className="object-cover w-full h-full transition-transform group-hover:scale-[1.02]"
+          className="w-full h-auto object-contain md:h-full md:object-cover transition-transform group-hover:scale-[1.02]"
         />
         {/* Expand overlay on hover */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
