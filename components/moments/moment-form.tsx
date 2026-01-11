@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   validateMediaFile,
-  isVideoUrl,
   ALL_ALLOWED_TYPES,
 } from "@/lib/media-utils";
 import { triggerHaptic } from "@/lib/haptics";
@@ -98,18 +97,15 @@ export function MomentForm({ eventId, eventSlug, userId, onSuccess }: MomentForm
     e.target.value = "";
   };
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
 
-      const file = e.dataTransfer.files?.[0];
-      if (file) {
-        uploadMedia(file);
-      }
-    },
-    [eventId, userId]
-  );
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      uploadMedia(file);
+    }
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -145,7 +141,7 @@ export function MomentForm({ eventId, eventSlug, userId, onSuccess }: MomentForm
 
       const contentType = mode === "text" ? "text" : (previewIsVideo ? "video" : "photo");
 
-      const { data, error: postError } = await supabase.rpc("create_moment", {
+      const { error: postError } = await supabase.rpc("create_moment", {
         p_event_id: eventId,
         p_content_type: contentType,
         p_media_url: mode === "media" ? mediaUrl : null,
