@@ -3,14 +3,19 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+const siteUrl = "https://dalat.app";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: new URL(siteUrl),
   title: "dalat.app - Events without the noise",
   description: "Discover and organize events in Da Lat",
+  openGraph: {
+    type: "website",
+    siteName: "dalat.app",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 const geistSans = Geist({

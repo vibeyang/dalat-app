@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { ArrowLeft, Calendar, MapPin, Users, ExternalLink, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,59 @@ import type { Event, EventCounts, Rsvp, Profile } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+// Generate dynamic OG metadata for social sharing
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data: event } = await supabase
+    .from("events")
+    .select("title, description, image_url, location_name, starts_at")
+    .eq("slug", slug)
+    .single();
+
+  if (!event) {
+    return {
+      title: "Event not found",
+    };
+  }
+
+  const eventDate = formatInDaLat(event.starts_at, "EEE, MMM d 'at' h:mm a");
+  const description = event.description
+    ? `${event.description.slice(0, 150)}${event.description.length > 150 ? "..." : ""}`
+    : `${eventDate}${event.location_name ? ` · ${event.location_name}` : ""} · dalat.app`;
+
+  return {
+    title: `${event.title} | dalat.app`,
+    description,
+    openGraph: {
+      title: event.title,
+      description,
+      type: "website",
+      url: `/events/${slug}`,
+      siteName: "dalat.app",
+      ...(event.image_url && {
+        images: [
+          {
+            url: event.image_url,
+            width: 1200,
+            height: 630,
+            alt: event.title,
+          },
+        ],
+      }),
+    },
+    twitter: {
+      card: event.image_url ? "summary_large_image" : "summary",
+      title: event.title,
+      description,
+      ...(event.image_url && {
+        images: [event.image_url],
+      }),
+    },
+  };
 }
 
 async function getEvent(slug: string) {
