@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { BadgeClearer } from "@/components/badge-clearer";
 import "./globals.css";
 
 const siteUrl = "https://dalat.app";
@@ -38,6 +39,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <BadgeClearer />
           {children}
         </ThemeProvider>
       </body>
