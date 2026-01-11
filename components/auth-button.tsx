@@ -39,8 +39,8 @@ export async function AuthButton() {
         displayName={profile?.display_name || null}
         username={profile?.username || null}
         userId={user.id}
-        currentLocale={(profile?.locale as Locale) || 'en'}
-        role={profile?.role || 'user'}
+        currentLocale={(profile?.locale as Locale) || "en"}
+        role={profile?.role || "user"}
       />
     </div>
   );

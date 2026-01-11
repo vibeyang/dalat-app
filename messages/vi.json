@@ -154,7 +154,9 @@
     "appearance": "Giao diện",
     "appearanceDescription": "Tùy chỉnh giao diện ứng dụng",
     "language": "Ngôn ngữ",
-    "languageDescription": "Chọn ngôn ngữ ưa thích của bạn"
+    "languageDescription": "Chọn ngôn ngữ ưa thích của bạn",
+    "account": "Tài khoản",
+    "accountDescription": "Quản lý tài khoản của bạn"
   },
   "notifications": {
     "enable": "Bật thông báo",

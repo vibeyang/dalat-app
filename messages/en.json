@@ -154,7 +154,9 @@
     "appearance": "Appearance",
     "appearanceDescription": "Customize how the app looks on your device",
     "language": "Language",
-    "languageDescription": "Choose your preferred language"
+    "languageDescription": "Choose your preferred language",
+    "account": "Account",
+    "accountDescription": "Manage your account"
   },
   "notifications": {
     "enable": "Enable notifications",

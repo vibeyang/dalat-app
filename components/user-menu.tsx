@@ -29,7 +29,7 @@ interface UserMenuProps {
   role: UserRole;
 }
 
-const ADMIN_ROLES: UserRole[] = ['admin', 'moderator', 'organizer_verified', 'contributor'];
+const ADMIN_ROLES: UserRole[] = ["admin", "moderator", "organizer_verified", "contributor"];
 
 export function UserMenu({ avatarUrl, displayName, username, userId, currentLocale, role }: UserMenuProps) {
   const hasAdminAccess = ADMIN_ROLES.includes(role);

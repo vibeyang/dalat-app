@@ -154,7 +154,9 @@
     "appearance": "Apparence",
     "appearanceDescription": "Personnalisez l'apparence de l'application",
     "language": "Langue",
-    "languageDescription": "Choisissez votre langue préférée"
+    "languageDescription": "Choisissez votre langue préférée",
+    "account": "Compte",
+    "accountDescription": "Gérez votre compte"
   },
   "notifications": {
     "enable": "Activer les notifications",

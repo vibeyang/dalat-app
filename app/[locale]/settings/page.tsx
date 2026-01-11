@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ThemeSelector } from "@/components/settings/theme-selector";
 import { LanguageSelector } from "@/components/settings/language-selector";
 import { NotificationSettings } from "@/components/settings/notification-settings";
+import { SignOutButton } from "@/components/settings/sign-out-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Locale } from "@/lib/types";
 
@@ -67,6 +68,19 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <LanguageSelector userId={user.id} currentLocale={(profile.locale as Locale) || "en"} />
+        </CardContent>
+      </Card>
+
+      {/* Account Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("account")}</CardTitle>
+          <CardDescription>
+            {t("accountDescription")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SignOutButton />
         </CardContent>
       </Card>
     </div>
