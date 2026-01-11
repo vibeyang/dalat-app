@@ -187,6 +187,11 @@ export function EventForm({ userId, event }: EventFormProps) {
         const cleanSlug = finalizeSlug(slug);
         if (slugEditable && cleanSlug && cleanSlug !== event.slug) {
           updateData.slug = cleanSlug;
+          // Append old slug to previous_slugs for redirects
+          const currentPreviousSlugs = event.previous_slugs ?? [];
+          if (!currentPreviousSlugs.includes(event.slug)) {
+            updateData.previous_slugs = [...currentPreviousSlugs, event.slug];
+          }
         }
 
         const { error: updateError } = await supabase

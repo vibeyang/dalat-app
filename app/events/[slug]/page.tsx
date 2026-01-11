@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -13,10 +13,12 @@ import { ConfirmAttendanceHandler } from "@/components/events/confirm-attendance
 import { AttendeeList } from "@/components/events/attendee-list";
 import { EventMediaDisplay } from "@/components/events/event-media-display";
 import { formatInDaLat } from "@/lib/timezone";
-import type { Event, EventCounts, Rsvp, Profile } from "@/lib/types";
+import { MoreFromOrganizer } from "@/components/events/more-from-organizer";
+import type { Event, EventCounts, Rsvp, Profile, Organizer } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 // Generate dynamic OG metadata for social sharing
@@ -72,20 +74,52 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-async function getEvent(slug: string) {
+type GetEventResult =
+  | { type: "found"; event: Event & { profiles: Profile; organizers: Organizer | null } }
+  | { type: "redirect"; newSlug: string }
+  | { type: "not_found" };
+
+async function getEvent(slug: string): Promise<GetEventResult> {
   const supabase = await createClient();
 
+  // First, try to find by current slug
   const { data: event, error } = await supabase
     .from("events")
-    .select("*, profiles(*)")
+    .select("*, profiles(*), organizers(*)")
     .eq("slug", slug)
     .single();
 
-  if (error || !event) {
-    return null;
+  if (!error && event) {
+    return { type: "found", event: event as Event & { profiles: Profile; organizers: Organizer | null } };
   }
 
-  return event as Event & { profiles: Profile };
+  // If not found, check if this is an old slug that needs redirect
+  const { data: eventByOldSlug } = await supabase
+    .from("events")
+    .select("slug")
+    .contains("previous_slugs", [slug])
+    .single();
+
+  if (eventByOldSlug) {
+    return { type: "redirect", newSlug: eventByOldSlug.slug };
+  }
+
+  return { type: "not_found" };
+}
+
+async function getOrganizerEvents(organizerId: string): Promise<Event[]> {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("events")
+    .select("*")
+    .eq("organizer_id", organizerId)
+    .eq("status", "published")
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(10);
+
+  return (data ?? []) as Event[];
 }
 
 async function getEventCounts(eventId: string): Promise<EventCounts | null> {
@@ -170,22 +204,40 @@ async function getCurrentUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
-export default async function EventPage({ params }: PageProps) {
+export default async function EventPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  const event = await getEvent(slug);
+  const result = await getEvent(slug);
 
-  if (!event) {
+  if (result.type === "not_found") {
     notFound();
   }
 
+  if (result.type === "redirect") {
+    // Preserve any query params (like ?confirm=yes from notifications)
+    const queryParams = await searchParams;
+    const queryString = Object.entries(queryParams)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => {
+        if (Array.isArray(value)) {
+          return value.map(v => `${key}=${encodeURIComponent(v)}`).join("&");
+        }
+        return `${key}=${encodeURIComponent(value as string)}`;
+      })
+      .join("&");
+    redirect(`/events/${result.newSlug}${queryString ? `?${queryString}` : ""}`);
+  }
+
+  const event = result.event;
+
   const currentUserId = await getCurrentUserId();
 
-  const [counts, currentRsvp, attendees, waitlist, waitlistPosition] = await Promise.all([
+  const [counts, currentRsvp, attendees, waitlist, waitlistPosition, organizerEvents] = await Promise.all([
     getEventCounts(event.id),
     getCurrentUserRsvp(event.id),
     getAttendees(event.id),
     getWaitlist(event.id),
     getWaitlistPosition(event.id, currentUserId),
+    event.organizer_id ? getOrganizerEvents(event.organizer_id) : Promise.resolve([]),
   ]);
 
   const isLoggedIn = !!currentUserId;
@@ -366,6 +418,15 @@ export default async function EventPage({ params }: PageProps) {
                 </Link>
               </CardContent>
             </Card>
+
+            {/* More from organizer */}
+            {event.organizers && organizerEvents.length > 1 && (
+              <MoreFromOrganizer
+                organizer={event.organizers}
+                events={organizerEvents}
+                currentEventId={event.id}
+              />
+            )}
           </div>
         </div>
       </div>
