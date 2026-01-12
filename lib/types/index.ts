@@ -387,3 +387,67 @@ export interface MomentLikeStatus {
   liked: boolean;
   count: number;
 }
+
+// ============================================
+// Event Invitation Types
+// ============================================
+
+export type InvitationStatus = 'pending' | 'sent' | 'viewed' | 'responded';
+export type InvitationRsvpStatus = 'going' | 'cancelled' | 'interested';
+
+export interface EventInvitation {
+  id: string;
+  event_id: string;
+  invited_by: string;
+  email: string;
+  name: string | null;
+  token: string;
+  status: InvitationStatus;
+  rsvp_status: InvitationRsvpStatus | null;
+  claimed_by: string | null;
+  sent_at: string | null;
+  viewed_at: string | null;
+  responded_at: string | null;
+  created_at: string;
+  // Joined data
+  events?: Event;
+  profiles?: Profile;
+  claimed_profile?: Profile;
+}
+
+export interface OrganizerContact {
+  id: string;
+  owner_id: string;
+  email: string;
+  name: string | null;
+  last_invited_at: string;
+  invite_count: number;
+  created_at: string;
+}
+
+export interface InviteQuota {
+  id: string;
+  user_id: string;
+  date: string;
+  daily_count: number;
+  weekly_count: number;
+  week_start: string;
+}
+
+export interface InviteQuotaCheck {
+  allowed: boolean;
+  reason?: 'unauthorized' | 'daily_limit_exceeded' | 'weekly_limit_exceeded';
+  remaining_daily: number;
+  remaining_weekly: number;
+}
+
+export interface InvitationCounts {
+  total: number;
+  pending: number;
+  sent: number;
+  viewed: number;
+  responded: number;
+  going: number;
+  not_going: number;
+  maybe: number;
+}

@@ -327,6 +327,90 @@ export async function createOrUpdateSubscriber(
   });
 }
 
+// Event invitation notification (email-based, no subscriber ID needed)
+export async function notifyEventInvitation(
+  inviteeEmail: string,
+  inviteeName: string | null,
+  locale: Locale,
+  eventTitle: string,
+  eventSlug: string,
+  eventDescription: string | null,
+  startsAt: string,
+  locationName: string | null,
+  inviterName: string,
+  token: string
+) {
+  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
+
+  // Format event date/time for display
+  const eventDate = new Date(startsAt);
+  const formattedDate = eventDate.toLocaleDateString(locale === 'vi' ? 'vi-VN' : locale === 'fr' ? 'fr-FR' : 'en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Ho_Chi_Minh',
+  });
+  const formattedTime = eventDate.toLocaleTimeString(locale === 'vi' ? 'vi-VN' : locale === 'fr' ? 'fr-FR' : 'en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Ho_Chi_Minh',
+  });
+
+  const inviteTranslations = {
+    subject: {
+      en: (inviter: string, title: string) => `${inviter} invited you to "${title}"`,
+      fr: (inviter: string, title: string) => `${inviter} vous invite à "${title}"`,
+      vi: (inviter: string, title: string) => `${inviter} mời bạn tham gia "${title}"`,
+    },
+    body: {
+      en: (date: string, time: string, location: string | null) =>
+        `${date} at ${time}${location ? ` • ${location}` : ''}`,
+      fr: (date: string, time: string, location: string | null) =>
+        `${date} à ${time}${location ? ` • ${location}` : ''}`,
+      vi: (date: string, time: string, location: string | null) =>
+        `${date} lúc ${time}${location ? ` • ${location}` : ''}`,
+    },
+    buttons: {
+      going: { en: "Yes, I'm going", fr: 'Oui, je viens', vi: 'Có, tôi sẽ đến' },
+      maybe: { en: 'Maybe', fr: 'Peut-être', vi: 'Có thể' },
+      notGoing: { en: "Can't make it", fr: 'Non, désolé', vi: 'Không thể đến' },
+      viewDetails: { en: 'View event', fr: 'Voir l\'événement', vi: 'Xem sự kiện' },
+      addToCalendar: { en: 'Add to calendar', fr: 'Ajouter au calendrier', vi: 'Thêm vào lịch' },
+    },
+  };
+
+  // Trigger email workflow (uses email as subscriber ID for non-users)
+  await getNovu().trigger('event-invitation', {
+    to: {
+      subscriberId: `invite-${token}`,
+      email: inviteeEmail,
+      firstName: inviteeName || undefined,
+    },
+    payload: {
+      subject: inviteTranslations.subject[locale](inviterName, eventTitle),
+      eventTitle,
+      eventDescription: eventDescription || '',
+      eventDate: formattedDate,
+      eventTime: formattedTime,
+      locationName: locationName || '',
+      inviterName,
+      inviteeName: inviteeName || '',
+      inviteUrl,
+      goingUrl: `${inviteUrl}?rsvp=going`,
+      maybeUrl: `${inviteUrl}?rsvp=interested`,
+      notGoingUrl: `${inviteUrl}?rsvp=cancelled`,
+      calendarUrl: `${inviteUrl}/calendar.ics`,
+      eventUrl: `${process.env.NEXT_PUBLIC_APP_URL}/events/${eventSlug}`,
+      goingLabel: inviteTranslations.buttons.going[locale],
+      maybeLabel: inviteTranslations.buttons.maybe[locale],
+      notGoingLabel: inviteTranslations.buttons.notGoing[locale],
+      viewDetailsLabel: inviteTranslations.buttons.viewDetails[locale],
+      addToCalendarLabel: inviteTranslations.buttons.addToCalendar[locale],
+    },
+  });
+}
+
 // Schedule event reminders using Novu's delay feature
 // This triggers workflows that will be delayed until the specified time
 export async function scheduleEventReminders(

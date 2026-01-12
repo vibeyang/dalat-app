@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { RsvpButton } from "@/components/events/rsvp-button";
 import { EventActions } from "@/components/events/event-actions";
+import { InviteModal } from "@/components/events/invite-modal";
 import { AddToCalendar } from "@/components/events/add-to-calendar";
 import { CopyAddress } from "@/components/events/copy-address";
 import { ConfirmAttendanceHandler } from "@/components/events/confirm-attendance-handler";
@@ -357,7 +358,15 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             <span>{tCommon("back")}</span>
           </Link>
           {isCreator && (
-            <EventActions eventId={event.id} eventSlug={event.slug} />
+            <div className="flex items-center gap-2">
+              <InviteModal
+                eventSlug={event.slug}
+                eventTitle={event.title}
+                eventDescription={event.description}
+                startsAt={event.starts_at}
+              />
+              <EventActions eventId={event.id} eventSlug={event.slug} />
+            </div>
           )}
         </div>
       </nav>
