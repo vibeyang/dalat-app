@@ -15,7 +15,7 @@
 app/[locale]/           # Localized pages
 components/             # React components
   ├── events/           # Event-related components
-  ├── moments/          # UGC moments components (NEW)
+  ├── moments/          # UGC moments components
   ├── admin/            # Admin dashboard
   └── ui/               # shadcn/ui primitives
 lib/
@@ -26,7 +26,30 @@ supabase/migrations/    # SQL migrations (date-prefixed)
 messages/               # Translation files (en.json, vi.json, fr.json)
 ```
 
-## Recently Completed: Moments UGC System
+## Recently Completed: Event Settings UI
+
+### What It Does
+Event creators can now configure moments for their events via a dedicated settings page:
+- **Enable/disable moments** - Toggle to allow UGC on the event
+- **Who can post** - Anyone / RSVPed only / Confirmed attendees only
+- **Require approval** - Optional moderation queue before publishing
+
+### Key Files
+- **Page**: `app/[locale]/events/[slug]/settings/page.tsx`
+- **Form Component**: `components/events/event-settings-form.tsx`
+- **Menu Integration**: `components/events/event-actions.tsx` (added Settings link)
+- **Translations**: `eventSettings` namespace in en/vi/fr.json
+
+### How to Access
+Event creator clicks ⋯ menu on their event → "Event settings"
+
+### Database
+Uses existing `event_settings` table (upsert pattern - creates if missing):
+```sql
+event_settings (event_id PK, moments_enabled, moments_who_can_post, moments_require_approval)
+```
+
+## Previously Completed: Moments UGC System
 
 ### What It Does
 - Users can post photos, videos, and text moments from events
@@ -42,12 +65,6 @@ messages/               # Translation files (en.json, vi.json, fr.json)
   - `app/[locale]/events/[slug]/moments/page.tsx` - Gallery
   - `app/[locale]/events/[slug]/moments/new/page.tsx` - Create form
   - `app/[locale]/moments/[id]/page.tsx` - Individual moment (SEO)
-
-### Database Tables
-```sql
-event_settings (event_id PK, moments_enabled, moments_who_can_post, moments_require_approval)
-moments (id, event_id, user_id, content_type, media_url, text_content, status)
-```
 
 ### RPC Functions
 - `get_event_moments(event_id, limit, offset)` - Fetch published moments
@@ -90,13 +107,22 @@ import { useTranslations } from "next-intl";
 const t = useTranslations("namespace");
 ```
 
-## Potential Next Tasks
+## Next Tasks (Priority Order)
 
-### Moments Enhancements
-1. **Moderation UI** - Event creator panel to approve/reject pending moments
-2. **Event Settings UI** - Toggle to enable moments and configure permissions
-3. **Infinite scroll** - Pagination for large galleries
-4. **Reactions** - Like/heart moments
+### 1. Moderation UI (High Priority)
+Event creators need a panel to approve/reject pending moments when `moments_require_approval` is enabled.
+
+**Suggested approach:**
+- Add moderation tab/section to event settings or moments gallery
+- Show pending moments with approve/reject buttons
+- Update moment status via Supabase (RLS already configured)
+- Use existing `moments.moderation` translations
+
+### 2. Infinite Scroll (Medium Priority)
+Pagination for galleries with many moments. Currently fetches all at once.
+
+### 3. Reactions/Likes (Medium Priority)
+Let users like/heart moments - would need new DB table.
 
 ### Other Features in Backlog
 - Push notification improvements
@@ -115,9 +141,10 @@ npx supabase db push # Apply migrations
 - `CLAUDE.md` - Project conventions and patterns
 - `docs/handover-moments-ugc.md` - Moments feature details
 - `lib/types/index.ts` - All TypeScript types
-- `supabase/migrations/20241224_001_initial_schema.sql` - Core schema
+- `supabase/migrations/20260119_001_moments_ugc.sql` - Moments schema
 
 ## Current State
-- All Moments UGC code is committed and pushed to `main`
-- Migration `20260119_001_moments_ugc.sql` is applied to production
-- No pending changes or open PRs
+- Event Settings UI committed and pushed to `main` (commit `ab09aa6`)
+- All Moments UGC code is on `main`
+- `docs/handover-admin-analytics.md` has uncommitted changes (unrelated to moments)
+- No open PRs

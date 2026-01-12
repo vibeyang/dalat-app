@@ -2,6 +2,23 @@
 
 **Date:** January 11, 2026
 **Session Focus:** Fix admin 500 errors, add session/login analytics
+**Commits:** `e00b99c` → `89bad86` (8 commits)
+
+---
+
+## Quick Start for Next Session
+
+```bash
+# 1. Ensure migrations are applied (if not already)
+npx supabase db push
+
+# 2. Verify admin dashboard works
+npm run dev
+# Visit http://localhost:3000/admin
+
+# 3. Check for errors in console
+# If you see "Error fetching..." - the RPC function may be missing
+```
 
 ---
 
@@ -17,10 +34,10 @@
 3. **Unsafe optional chaining** - `overview?.users.total` throws if `overview` exists but `users` is undefined
 
 **Files Changed:**
-- `components/admin/analytics/stat-card.tsx` - Changed `icon: LucideIcon` to `icon: ReactNode`
-- `app/[locale]/admin/page.tsx` - Pass rendered JSX icons (`<Users className="..." />`) instead of component functions
-- `lib/admin/analytics.ts` - Added try-catch to all 9 analytics functions
-- `app/[locale]/admin/layout.tsx` - Added try-catch around auth/profile fetching
+- [stat-card.tsx](components/admin/analytics/stat-card.tsx) - Changed `icon: LucideIcon` to `icon: ReactNode`
+- [admin/page.tsx](app/[locale]/admin/page.tsx) - Pass rendered JSX icons (`<Users className="..." />`) instead of component functions
+- [analytics.ts](lib/admin/analytics.ts) - Added try-catch to all 9 analytics functions
+- [admin/layout.tsx](app/[locale]/admin/layout.tsx) - Added try-catch around auth/profile fetching
 
 ### 2. Added Session Stats to Main Dashboard
 
@@ -29,9 +46,9 @@
 - **Last Login** - Most recent login timestamp across all users
 
 **Files:**
-- `lib/types/index.ts` - Added optional `sessions` field to `DashboardOverview`
-- `lib/admin/analytics.ts` - Added `SessionStats` interface and `getSessionStats()` function
-- `supabase/migrations/20260121_001_session_stats.sql` - RPC function `get_session_stats()`
+- [lib/types/index.ts](lib/types/index.ts) - Added optional `sessions` field to `DashboardOverview`
+- [lib/admin/analytics.ts](lib/admin/analytics.ts) - Added `SessionStats` interface and `getSessionStats()` function
+- [20260121_001_session_stats.sql](supabase/migrations/20260121_001_session_stats.sql) - RPC function `get_session_stats()`
 
 ### 3. Added Login Tracking to User Management
 
@@ -40,11 +57,41 @@
 - **Last Login** - Per-user last sign-in timestamp (lg+ screens)
 
 **Files:**
-- `app/[locale]/admin/users/page.tsx` - Fetches auth data via RPC, passes to table
-- `components/admin/user-management-table.tsx` - Added `authDataMap` prop and new columns
-- `supabase/migrations/20260122_001_user_auth_data.sql` - Creates:
+- [users/page.tsx](app/[locale]/admin/users/page.tsx) - Fetches auth data via RPC, passes to table
+- [user-management-table.tsx](components/admin/user-management-table.tsx) - Added `authDataMap` prop and new columns
+- [20260122_001_user_auth_data.sql](supabase/migrations/20260122_001_user_auth_data.sql) - Creates:
   - `login_events` table for tracking login counts
   - `get_users_with_login_stats()` RPC function
+
+---
+
+## Design Decisions & Rationale
+
+### Why `ReactNode` for Icons Instead of `LucideIcon`?
+
+Next.js App Router enforces strict Server/Client Component boundaries. Components marked `"use client"` cannot receive functions as props from Server Components. Since `LucideIcon` is a function type, we switched to `ReactNode` which accepts pre-rendered JSX.
+
+```tsx
+// ❌ WRONG - Passing function to client component
+<StatCard icon={Users} />
+
+// ✅ CORRECT - Passing rendered JSX
+<StatCard icon={<Users className="h-6 w-6 text-primary" />} />
+```
+
+### Why Parallel Fetches with Individual Try-Catch?
+
+Each analytics query (`getFullDashboardData`) runs in parallel using `Promise.all`, but each has its own try-catch. This means:
+- **Fast**: All queries run simultaneously (~200ms total vs ~2s sequential)
+- **Resilient**: One failing query doesn't break the whole dashboard
+- **Debuggable**: Failed queries return `null` and log specific errors
+
+### Why a Separate `login_events` Table?
+
+Supabase's `auth.users` table only stores `last_sign_in_at` - it doesn't track login count. The `login_events` table enables:
+- Accurate per-user login counts
+- Historical login data for audit trails
+- Future analytics (login patterns, IP tracking, etc.)
 
 ---
 
@@ -64,16 +111,6 @@ StatCard components receive ReactNode icons (not functions)
 Charts receive data arrays, handle empty state gracefully
 ```
 
-### Key Pattern: Server → Client Component Icon Passing
-
-```tsx
-// ❌ WRONG - Passing function to client component
-<StatCard icon={Users} />
-
-// ✅ CORRECT - Passing rendered JSX
-<StatCard icon={<Users className="h-6 w-6 text-primary" />} />
-```
-
 ### RPC Functions (Supabase)
 
 | Function | Returns | Used By |
@@ -81,6 +118,7 @@ Charts receive data arrays, handle empty state gracefully
 | `get_dashboard_overview` | User/event/RSVP counts | Main dashboard |
 | `get_session_stats` | Total logins, active today, last login | Main dashboard |
 | `get_users_with_login_stats` | Per-user login count + last login | User management |
+| `get_users_auth_data` | Per-user last_sign_in_at | User management (fallback) |
 | `get_user_growth` | Time series data | User growth chart |
 | `get_role_distribution` | Role breakdown | Role distribution chart |
 | `get_event_activity` | Event creation over time | Event activity chart |
@@ -91,17 +129,28 @@ Charts receive data arrays, handle empty state gracefully
 
 ---
 
+## Dependencies
+
+This feature uses existing dependencies (no new packages added):
+
+| Package | Purpose |
+|---------|---------|
+| `recharts` | Chart rendering (UserGrowthChart, etc.) |
+| `lucide-react` | Icons for stat cards |
+| `date-fns` | Date formatting for timestamps |
+
+---
+
 ## Known Limitations
 
-### 1. Login Count Tracking
+### 1. Login Count Tracking Not Yet Active
 
-The `login_events` table was just created, so:
-- **Existing users show 0 logins** - Historical logins weren't tracked
-- **Future logins not yet tracked** - Need to add Supabase Auth webhook or trigger
+The `login_events` table exists but isn't being populated. **Existing users show 0 logins.**
 
-**To enable login tracking**, add a Supabase Auth hook:
+**To enable login tracking**, add this Supabase Auth trigger via SQL Editor or a new migration:
+
 ```sql
--- Example: Trigger on auth.users update
+-- Trigger function to track logins
 CREATE OR REPLACE FUNCTION track_user_login()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -113,15 +162,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Attach trigger to auth.users
 CREATE TRIGGER on_auth_user_login
   AFTER UPDATE ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION track_user_login();
 ```
 
-### 2. Missing RPC Functions
+**How to apply:** Run this SQL in Supabase Dashboard → SQL Editor, or create a new migration file and run `npx supabase db push`.
 
-If any RPC function doesn't exist in Supabase, the dashboard gracefully shows 0/empty data instead of crashing. Check Vercel logs for "Error fetching..." messages to identify missing functions.
+### 2. Missing RPC Functions Fail Gracefully
+
+If any RPC function doesn't exist in Supabase, the dashboard shows 0/empty data instead of crashing. Check Vercel logs for "Error fetching..." messages to identify missing functions.
 
 ### 3. Stats Grid Responsiveness
 
@@ -168,10 +220,31 @@ supabase/migrations/
 └── 20260122_001_user_auth_data.sql     # login_events + get_users_with_login_stats()
 ```
 
+**Note on migration naming:** Files use sequential dates (20260113, 20260114, ..., 20260122) to ensure correct execution order. Supabase runs migrations alphabetically, so this pattern guarantees proper sequencing regardless of creation date.
+
+---
+
+## Deployment Checklist
+
+**Before deploying to production:**
+
+- [ ] Run `npx supabase db push` to apply migrations
+- [ ] Verify RPC functions exist in Supabase Dashboard → Database → Functions
+- [ ] Check Vercel environment variables are set (SUPABASE_URL, SUPABASE_ANON_KEY)
+- [ ] Test `/admin` page loads without 500 error
+- [ ] Verify you can see stats (even if 0)
+
+**After deployment:**
+
+- [ ] Check Vercel logs for any "Error fetching..." messages
+- [ ] Verify charts render (or show "No data available" gracefully)
+- [ ] Test role changes work via dropdown on `/admin/users`
+
 ---
 
 ## Testing Checklist
 
+### Functional Tests
 - [ ] `/admin` loads without 500 error
 - [ ] All 6 stat cards display (or show 0/—)
 - [ ] Charts render (or show "No data available")
@@ -179,11 +252,37 @@ supabase/migrations/
 - [ ] Role changes work via dropdown
 - [ ] Mobile responsive layout works
 
+### Error Handling Tests
+- [ ] Dashboard still loads if one RPC fails
+- [ ] Missing RPC shows 0/empty, not crash
+- [ ] Non-admin users are redirected (not 500)
+
+### Edge Cases
+- [ ] Empty database (new install) - shows zeros, not errors
+- [ ] User with no logins shows "—" not error
+- [ ] Very long user list paginates correctly
+
+---
+
+## Troubleshooting
+
+### "Error fetching dashboard overview"
+The `get_dashboard_overview` RPC doesn't exist. Run the migration in `20260116_001_analytics_functions.sql`.
+
+### All stats show 0
+Either the database is empty, or migrations haven't been applied. Run `npx supabase db push`.
+
+### "Cannot read properties of undefined"
+Likely the defensive null checks aren't in place. Ensure you're using `overview?.users?.total ?? 0` pattern, not `overview?.users.total`.
+
+### Icons not rendering on stat cards
+Make sure you're passing rendered JSX, not component functions. See the "Design Decisions" section above.
+
 ---
 
 ## Next Steps / Ideas
 
-1. **Enable login tracking** - Add Supabase Auth trigger (see above)
+1. **Enable login tracking** - Add Supabase Auth trigger (see limitation #1 above)
 2. **Add refresh button** - Allow manual data refresh without page reload
 3. **Add date range selector** - Filter charts by custom date range
 4. **Export functionality** - CSV export of user data
