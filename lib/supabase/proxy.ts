@@ -8,6 +8,33 @@ function isLocale(segment: string): boolean {
   return routing.locales.includes(segment as typeof routing.locales[number]);
 }
 
+// Detect browser's preferred locale from Accept-Language header
+function detectBrowserLocale(request: NextRequest): string | null {
+  const acceptLanguage = request.headers.get('accept-language');
+  if (!acceptLanguage) return null;
+
+  // Parse Accept-Language header (e.g., "en-US,en;q=0.9,vi;q=0.8,fr;q=0.7")
+  const languages = acceptLanguage
+    .split(',')
+    .map(lang => {
+      const [code, qValue] = lang.trim().split(';q=');
+      return {
+        code: code.split('-')[0].toLowerCase(), // Get base language code
+        q: qValue ? parseFloat(qValue) : 1.0
+      };
+    })
+    .sort((a, b) => b.q - a.q);
+
+  // Find first matching supported locale
+  for (const lang of languages) {
+    if (isLocale(lang.code)) {
+      return lang.code;
+    }
+  }
+
+  return null;
+}
+
 // Check if path looks like a username (3+ chars, alphanumeric + underscore)
 function looksLikeUsername(segment: string): boolean {
   const username = segment.replace(/^@/, '');
@@ -37,8 +64,14 @@ export async function updateSession(request: NextRequest) {
   if (!shouldSkipLocale) {
     // Handle locale routing
     const pathnameLocale = getLocaleFromPath(pathname);
-    const preferredLocale = request.cookies.get('NEXT_LOCALE')?.value;
+    const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
+    const browserLocale = detectBrowserLocale(request);
     const defaultLocale = routing.defaultLocale;
+
+    // Priority: cookie > browser detection > default
+    const preferredLocale = (cookieLocale && isLocale(cookieLocale))
+      ? cookieLocale
+      : (browserLocale || defaultLocale);
 
     // If no locale in path, redirect to locale-prefixed version
     if (!pathnameLocale) {
@@ -50,15 +83,13 @@ export async function updateSession(request: NextRequest) {
 
         // If it looks like a username, redirect to /{locale}/{username}
         if (looksLikeUsername(segment)) {
-          const locale = (preferredLocale && isLocale(preferredLocale)) ? preferredLocale : defaultLocale;
-          const url = new URL(`/${locale}/${cleanSegment}`, request.url);
+          const url = new URL(`/${preferredLocale}/${cleanSegment}`, request.url);
           return NextResponse.redirect(url);
         }
       }
 
       // Standard redirect to add locale prefix
-      const locale = (preferredLocale && isLocale(preferredLocale)) ? preferredLocale : defaultLocale;
-      const url = new URL(`/${locale}${pathname}`, request.url);
+      const url = new URL(`/${preferredLocale}${pathname}`, request.url);
       url.search = request.nextUrl.search;
       return NextResponse.redirect(url);
     }

@@ -31,8 +31,9 @@ export function LanguageSelector({ userId, currentLocale }: LanguageSelectorProp
         .update({ locale: newLocale })
         .eq("id", userId);
 
-      // Set cookie for middleware
-      document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
+      // Set cookie for middleware (1 year expiry, secure in production)
+      const secure = window.location.protocol === 'https:' ? ';secure' : '';
+      document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;samesite=lax${secure}`;
 
       // Navigate to same page in new locale
       router.replace(pathname, { locale: newLocale });
