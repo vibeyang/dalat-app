@@ -23,7 +23,9 @@
     "review": "Xem xét",
     "noData": "Không có dữ liệu",
     "unknown": "Không xác định",
-    "unknownUser": "Người dùng không xác định"
+    "unknownUser": "Người dùng không xác định",
+    "previous": "Trước",
+    "next": "Tiếp"
   },
   "nav": {
     "events": "Sự kiện",

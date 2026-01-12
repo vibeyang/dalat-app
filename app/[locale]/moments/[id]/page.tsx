@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Link } from "@/lib/i18n/routing";
 import type { Metadata } from "next";
-import { ArrowLeft, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, MapPin } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
@@ -32,6 +32,77 @@ async function getMoment(id: string): Promise<MomentWithDetails | null> {
   if (error || !data) return null;
 
   return data as MomentWithDetails;
+}
+
+interface AdjacentMoments {
+  prevId: string | null;
+  nextId: string | null;
+}
+
+async function getAdjacentMoments(
+  eventId: string,
+  currentCreatedAt: string,
+  currentId: string
+): Promise<AdjacentMoments> {
+  const supabase = await createClient();
+
+  // Get the previous moment (older, or wrap to last)
+  const { data: prevData } = await supabase
+    .from("moments")
+    .select("id")
+    .eq("event_id", eventId)
+    .eq("status", "published")
+    .or(`created_at.lt.${currentCreatedAt},and(created_at.eq.${currentCreatedAt},id.lt.${currentId})`)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
+    .single();
+
+  // Get the next moment (newer, or wrap to first)
+  const { data: nextData } = await supabase
+    .from("moments")
+    .select("id")
+    .eq("event_id", eventId)
+    .eq("status", "published")
+    .or(`created_at.gt.${currentCreatedAt},and(created_at.eq.${currentCreatedAt},id.gt.${currentId})`)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(1)
+    .single();
+
+  let prevId = prevData?.id || null;
+  let nextId = nextData?.id || null;
+
+  // Wrap around: if no prev, get the last moment; if no next, get the first
+  if (!prevId) {
+    const { data: lastMoment } = await supabase
+      .from("moments")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("status", "published")
+      .neq("id", currentId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+      .single();
+    prevId = lastMoment?.id || null;
+  }
+
+  if (!nextId) {
+    const { data: firstMoment } = await supabase
+      .from("moments")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("status", "published")
+      .neq("id", currentId)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(1)
+      .single();
+    nextId = firstMoment?.id || null;
+  }
+
+  return { prevId, nextId };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -96,6 +167,14 @@ export default async function MomentPage({ params }: PageProps) {
   const isVideo = isVideoUrl(moment.media_url);
   const timeAgo = formatDistanceToNow(new Date(moment.created_at), { addSuffix: true });
 
+  // Get adjacent moments for navigation
+  const { prevId, nextId } = await getAdjacentMoments(
+    moment.event_id,
+    moment.created_at,
+    moment.id
+  );
+  const hasNavigation = prevId || nextId;
+
   return (
     <main className="min-h-screen">
       {/* Header */}
@@ -112,9 +191,9 @@ export default async function MomentPage({ params }: PageProps) {
       </nav>
 
       <div className="container max-w-2xl mx-auto px-4 py-6">
-        {/* Media display */}
+        {/* Media display with navigation */}
         {moment.content_type !== "text" && moment.media_url && (
-          <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-6">
+          <div className="relative aspect-square rounded-lg overflow-hidden bg-muted mb-6 group">
             {isVideo ? (
               <video
                 src={moment.media_url}
@@ -130,6 +209,56 @@ export default async function MomentPage({ params }: PageProps) {
                 alt=""
                 className="w-full h-full object-contain"
               />
+            )}
+
+            {/* Previous/Next navigation arrows */}
+            {hasNavigation && (
+              <>
+                {prevId && (
+                  <Link
+                    href={`/moments/${prevId}`}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white opacity-70 hover:opacity-100 active:scale-95 transition-all"
+                    aria-label={tCommon("previous")}
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </Link>
+                )}
+                {nextId && (
+                  <Link
+                    href={`/moments/${nextId}`}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white opacity-70 hover:opacity-100 active:scale-95 transition-all"
+                    aria-label={tCommon("next")}
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Navigation for text-only moments */}
+        {moment.content_type === "text" && hasNavigation && (
+          <div className="flex justify-between mb-6">
+            {prevId ? (
+              <Link
+                href={`/moments/${prevId}`}
+                className="flex items-center gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-all px-3 py-2 rounded-lg"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>{tCommon("previous")}</span>
+              </Link>
+            ) : (
+              <div />
+            )}
+            {nextId && (
+              <Link
+                href={`/moments/${nextId}`}
+                className="flex items-center gap-1 text-muted-foreground hover:text-foreground active:scale-95 transition-all px-3 py-2 rounded-lg"
+              >
+                <span>{tCommon("next")}</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
             )}
           </div>
         )}

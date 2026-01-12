@@ -23,7 +23,9 @@
     "review": "Review",
     "noData": "No data",
     "unknown": "Unknown",
-    "unknownUser": "Unknown User"
+    "unknownUser": "Unknown User",
+    "previous": "Previous",
+    "next": "Next"
   },
   "nav": {
     "events": "Events",

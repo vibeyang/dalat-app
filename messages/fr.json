@@ -23,7 +23,9 @@
     "review": "Examiner",
     "noData": "Aucune donnée",
     "unknown": "Inconnu",
-    "unknownUser": "Utilisateur inconnu"
+    "unknownUser": "Utilisateur inconnu",
+    "previous": "Précédent",
+    "next": "Suivant"
   },
   "nav": {
     "events": "Événements",
