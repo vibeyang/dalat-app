@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import { Heart } from "lucide-react";
 import { FooterLanguageLinks } from "./footer-language-links";
 
 /**
@@ -21,9 +22,11 @@ export function GlobalFooter() {
   return (
     <footer className="border-t py-8 mt-auto">
       <div className="container max-w-4xl mx-auto px-4 space-y-6">
-        {/* Hero text - "Made with love" prominent */}
-        <p className="text-center text-base md:text-lg text-muted-foreground">
-          {t("footer")}
+        {/* Hero text - "Made with ❤️" prominent */}
+        <p className="text-center text-base md:text-lg text-muted-foreground flex items-center justify-center gap-1.5">
+          <span>Made with</span>
+          <Heart className="w-4 h-4 md:w-5 md:h-5 fill-red-500 text-red-500" />
+          <span>for Da Lat, Vietnam</span>
         </p>
 
         {/* Language selector - 6+6 grid on mobile, single row on desktop */}
