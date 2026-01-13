@@ -345,30 +345,30 @@ export function FlyerBuilder({
             </Button>
           </div>
         ) : (
-          /* Default icon buttons */
-          <div className="flex items-center gap-2">
+          /* Default icon buttons - larger to match image icon */
+          <div className="flex items-center gap-3">
             <Button
               type="button"
               size="icon"
               variant="outline"
-              className="h-9 w-9"
+              className="h-12 w-12"
               onClick={() => setShowUrlInput(true)}
             >
-              <LinkIcon className="w-4 h-4" />
+              <LinkIcon className="w-6 h-6" />
             </Button>
             <div className="flex-1" />
             <Button
               type="button"
               size="icon"
               variant="outline"
-              className="h-9 w-9 border-dashed"
+              className="h-12 w-12 border-dashed"
               onClick={handleOpenPromptEditor}
               disabled={isGenerating}
             >
               {isGenerating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-6 h-6" />
               )}
             </Button>
           </div>

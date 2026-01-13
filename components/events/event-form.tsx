@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PlaceAutocomplete } from "@/components/events/place-autocomplete";
 import { EventMediaUpload } from "@/components/events/event-media-upload";
 import { FlyerBuilder } from "@/components/events/flyer-builder";
@@ -88,6 +89,9 @@ export function EventForm({ userId, event, initialSponsors = [] }: EventFormProp
 
   // Draft sponsors state (for new events)
   const [draftSponsors, setDraftSponsors] = useState<DraftSponsor[]>([]);
+
+  // Capacity limit toggle
+  const [hasCapacityLimit, setHasCapacityLimit] = useState(!!event?.capacity);
 
   // Check slug availability with debounce
   useEffect(() => {
@@ -427,7 +431,7 @@ export function EventForm({ userId, event, initialSponsors = [] }: EventFormProp
           {/* Custom URL Slug */}
           {slugEditable && (
             <div className="space-y-2">
-              <Label htmlFor="slug">Event URL</Label>
+              <Label htmlFor="slug">URL</Label>
               <div className="flex items-center gap-0">
                 <span className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-l-md border border-r-0 border-input">
                   dalat.app/events/
@@ -463,15 +467,14 @@ export function EventForm({ userId, event, initialSponsors = [] }: EventFormProp
             </div>
           )}
 
-          {/* Description */}
+          {/* Info */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Info</Label>
             <textarea
               id="description"
               name="description"
-              placeholder="What's this event about?"
               defaultValue={event?.description ?? ""}
-              rows={4}
+              rows={3}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
@@ -535,25 +538,30 @@ export function EventForm({ userId, event, initialSponsors = [] }: EventFormProp
               placeholder="https://..."
               defaultValue={event?.external_chat_url ?? ""}
             />
-            <p className="text-xs text-muted-foreground">
-              Link to a form, chat group, website, or social media
-            </p>
           </div>
 
           {/* Capacity */}
           <div className="space-y-2">
-            <Label htmlFor="capacity">Max attendees</Label>
-            <Input
-              id="capacity"
-              name="capacity"
-              type="number"
-              min="1"
-              placeholder="Leave empty for unlimited"
-              defaultValue={event?.capacity ?? ""}
-            />
-            <p className="text-xs text-muted-foreground">
-              Once full, new RSVPs go to a waitlist
-            </p>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="hasCapacityLimit"
+                checked={hasCapacityLimit}
+                onCheckedChange={(checked) => setHasCapacityLimit(!!checked)}
+              />
+              <Label htmlFor="hasCapacityLimit" className="cursor-pointer">
+                Limit attendees
+              </Label>
+              {hasCapacityLimit && (
+                <Input
+                  id="capacity"
+                  name="capacity"
+                  type="number"
+                  min="1"
+                  defaultValue={event?.capacity ?? ""}
+                  className="w-24"
+                />
+              )}
+            </div>
           </div>
 
           {/* Sponsors */}

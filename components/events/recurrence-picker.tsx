@@ -107,13 +107,7 @@ export function RecurrencePicker({
   };
 
   if (!selectedDate) {
-    return (
-      <div className={className}>
-        <Label className="text-muted-foreground">
-          Select a date to enable recurrence
-        </Label>
-      </div>
-    );
+    return null;
   }
 
   return (
