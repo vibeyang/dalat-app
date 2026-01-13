@@ -276,6 +276,7 @@ export default async function MomentPage({ params }: PageProps) {
           <div className="relative aspect-square rounded-lg overflow-hidden bg-muted mb-6 group">
             {isVideo ? (
               <video
+                key={moment.id}
                 src={moment.media_url}
                 className="w-full h-full object-contain"
                 controls

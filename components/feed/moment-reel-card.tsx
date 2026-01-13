@@ -44,6 +44,7 @@ export function MomentReelCard({
             <VideoPlayer
               src={moment.media_url}
               isActive={isActive}
+              poster={moment.event_image_url || undefined}
             />
           ) : (
             <ImmersiveImage src={moment.media_url} alt="" />

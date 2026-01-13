@@ -133,31 +133,33 @@ export function MomentsFeed({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="h-[100dvh] overflow-y-auto snap-y snap-mandatory overscroll-contain scrollbar-hide"
-    >
-      {moments.map((moment, index) => (
-        <MomentReelCard
-          key={moment.id}
-          moment={moment}
-          likeStatus={likeStatuses.get(moment.id)}
-          isActive={activeIndex === index}
-          index={index}
-        />
-      ))}
+    <div className="flex justify-center bg-black min-h-screen">
+      <div
+        ref={containerRef}
+        className="w-full max-w-lg lg:max-w-xl h-[100dvh] overflow-y-auto snap-y snap-mandatory overscroll-contain scrollbar-hide"
+      >
+        {moments.map((moment, index) => (
+          <MomentReelCard
+            key={moment.id}
+            moment={moment}
+            likeStatus={likeStatuses.get(moment.id)}
+            isActive={activeIndex === index}
+            index={index}
+          />
+        ))}
 
-      {/* Infinite scroll trigger */}
-      {hasMore && (
-        <div
-          ref={loadMoreRef}
-          className="h-20 flex items-center justify-center bg-black"
-        >
-          {isLoading && (
-            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          )}
-        </div>
-      )}
+        {/* Infinite scroll trigger */}
+        {hasMore && (
+          <div
+            ref={loadMoreRef}
+            className="h-20 flex items-center justify-center bg-black"
+          >
+            {isLoading && (
+              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
