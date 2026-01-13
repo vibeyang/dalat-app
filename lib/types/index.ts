@@ -321,6 +321,28 @@ export interface FestivalUpdate {
 }
 
 // ============================================
+// Sponsor Types
+// ============================================
+
+export interface Sponsor {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  website_url: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface EventSponsor {
+  event_id: string;
+  sponsor_id: string;
+  sort_order: number;
+  created_at: string;
+  // Joined data
+  sponsors?: Sponsor;
+}
+
+// ============================================
 // Analytics Types
 // ============================================
 

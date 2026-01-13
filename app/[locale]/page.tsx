@@ -7,6 +7,7 @@ import { AuthButton } from "@/components/auth-button";
 import { EventCard } from "@/components/events/event-card";
 import { EventFeedImmersive } from "@/components/events/event-feed-immersive";
 import { EventFeedTabs, type EventLifecycle } from "@/components/events/event-feed-tabs";
+import { PastContentFeed } from "@/components/feed";
 import { Button } from "@/components/ui/button";
 import type { Event, EventCounts } from "@/lib/types";
 
@@ -226,6 +227,13 @@ export default async function Home({ searchParams }: PageProps) {
               }}
             />
           </div>
+
+          {/* Content carousel for Past tab */}
+          {activeTab === "past" && (
+            <Suspense fallback={null}>
+              <PastContentFeed />
+            </Suspense>
+          )}
 
           <Suspense
             fallback={
