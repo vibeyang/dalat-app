@@ -441,7 +441,7 @@ export async function createSponsorsForEvent(
 
   for (let i = 0; i < draftSponsors.length; i++) {
     const draft = draftSponsors[i];
-    let logoUrl = draft.logo_url;
+    let logoUrl: string | null = draft.logo_url;
 
     // Upload logo if we have a file
     if (draft.logo_file) {
