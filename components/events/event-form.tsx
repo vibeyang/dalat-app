@@ -421,7 +421,6 @@ export function EventForm({ userId, event, initialSponsors = [] }: EventFormProp
               onTitleChange={handleTitleChange}
               imageUrl={imageUrl}
               onImageChange={handleImageChange}
-              defaultTitle=""
             />
           )}
 

@@ -2,27 +2,23 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
-  Upload,
   Link as LinkIcon,
   Sparkles,
   ImageIcon,
   Loader2,
   X,
-  ExternalLink,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { validateMediaFile, ALLOWED_MEDIA_TYPES } from "@/lib/media-utils";
 
-type ImageSource = "upload" | "url";
-
 interface FlyerBuilderProps {
   title: string;
   onTitleChange: (title: string) => void;
   imageUrl: string | null;
   onImageChange: (url: string | null, file?: File) => void;
-  defaultTitle?: string;
 }
 
 export function FlyerBuilder({
@@ -30,25 +26,21 @@ export function FlyerBuilder({
   onTitleChange,
   imageUrl,
   onImageChange,
-  defaultTitle = "",
 }: FlyerBuilderProps) {
-  const [source, setSource] = useState<ImageSource>("upload");
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(imageUrl);
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(previewUrl);
 
-  // Keep ref in sync with state for cleanup
   useEffect(() => {
     previewUrlRef.current = previewUrl;
   }, [previewUrl]);
 
-  // Cleanup blob URL on unmount
   useEffect(() => {
     return () => {
       if (previewUrlRef.current?.startsWith("blob:")) {
@@ -57,14 +49,12 @@ export function FlyerBuilder({
     };
   }, []);
 
-  // Helper to revoke existing blob URL before setting a new one
   const revokeExistingBlobUrl = useCallback(() => {
     if (previewUrl?.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrl);
     }
   }, [previewUrl]);
 
-  // Handle file selection/drop for upload mode
   const handleFile = useCallback(
     (file: File) => {
       setError(null);
@@ -73,19 +63,13 @@ export function FlyerBuilder({
         setError(validationError);
         return;
       }
-
-      // Only allow images for flyer
       if (!file.type.startsWith("image/")) {
-        setError("Please select an image file");
+        setError("Images only");
         return;
       }
-
-      // Revoke existing blob URL before creating a new one
       revokeExistingBlobUrl();
-
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
-      setPendingFile(file);
       onImageChange(objectUrl, file);
     },
     [onImageChange, revokeExistingBlobUrl]
@@ -117,47 +101,40 @@ export function FlyerBuilder({
     setIsDragOver(false);
   }, []);
 
-  // Handle URL loading
   const handleLoadUrl = async () => {
     if (!urlInput.trim()) return;
-
     setError(null);
     setIsLoadingUrl(true);
 
     try {
-      // Basic URL validation
       const url = new URL(urlInput.trim());
-      if (!url.protocol.startsWith("http")) {
-        throw new Error("URL must start with http:// or https://");
-      }
+      if (!url.protocol.startsWith("http")) throw new Error();
 
-      // Try to load the image to verify it's valid
       const img = new Image();
       img.onload = () => {
-        // Revoke existing blob URL before setting external URL
         revokeExistingBlobUrl();
         setPreviewUrl(urlInput.trim());
         onImageChange(urlInput.trim());
         setIsLoadingUrl(false);
+        setShowUrlInput(false);
+        setUrlInput("");
       };
       img.onerror = () => {
-        setError("Could not load image from URL");
+        setError("Invalid image");
         setIsLoadingUrl(false);
       };
       img.src = urlInput.trim();
     } catch {
-      setError("Please enter a valid URL");
+      setError("Invalid URL");
       setIsLoadingUrl(false);
     }
   };
 
-  // Handle AI generation
   const handleGenerate = async () => {
     if (!title.trim()) {
-      setError("Please enter an event title first");
+      setError("Add title first");
       return;
     }
-
     setError(null);
     setIsGenerating(true);
 
@@ -170,28 +147,25 @@ export function FlyerBuilder({
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Failed to generate image");
+        throw new Error(data.error || "Generation failed");
       }
 
       const data = await response.json();
-      // Revoke existing blob URL before setting generated image
       revokeExistingBlobUrl();
       setPreviewUrl(data.imageUrl);
       onImageChange(data.imageUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate image");
+      setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Clear image
   const handleClear = () => {
     if (previewUrl?.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrl);
     }
     setPreviewUrl(null);
-    setPendingFile(null);
     onImageChange(null);
     setUrlInput("");
     setError(null);
@@ -200,43 +174,28 @@ export function FlyerBuilder({
   const hasImage = !!previewUrl;
 
   return (
-    <div className="space-y-4">
-      {/* Preview area with title overlay */}
+    <div className="space-y-3">
+      {/* Preview area - click to upload */}
       <div
         className={cn(
           "relative aspect-[2/1] rounded-lg overflow-hidden bg-muted/50 border-2 transition-all",
-          isDragOver
-            ? "border-primary border-dashed"
-            : "border-muted-foreground/20",
-          source === "upload" && !hasImage && "cursor-pointer hover:border-muted-foreground/40"
+          isDragOver ? "border-primary border-dashed" : "border-muted-foreground/20",
+          !hasImage && "cursor-pointer hover:border-muted-foreground/40"
         )}
-        onDrop={source === "upload" ? handleDrop : undefined}
-        onDragOver={source === "upload" ? handleDragOver : undefined}
-        onDragLeave={source === "upload" ? handleDragLeave : undefined}
-        onClick={
-          source === "upload" && !hasImage
-            ? () => fileInputRef.current?.click()
-            : undefined
-        }
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={!hasImage ? () => fileInputRef.current?.click() : undefined}
       >
-        {/* Image or placeholder */}
         {previewUrl ? (
-          <img
-            src={previewUrl}
-            alt="Event flyer preview"
-            className="w-full h-full object-cover"
-          />
+          <img src={previewUrl} alt="" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-            <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              {source === "upload" && "Click or drop an image"}
-              {source === "url" && "Enter a URL below"}
-            </p>
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
           </div>
         )}
 
-        {/* Title input overlay */}
+        {/* Title input */}
         <div
           className="absolute bottom-0 inset-x-0 p-3"
           onClick={(e) => e.stopPropagation()}
@@ -244,9 +203,9 @@ export function FlyerBuilder({
           <Input
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Event title *"
+            placeholder="Event title"
             className={cn(
-              "text-lg font-semibold transition-all",
+              "text-lg font-semibold",
               hasImage
                 ? "bg-black/60 backdrop-blur-sm border-white/20 text-white placeholder:text-white/60"
                 : "bg-background"
@@ -276,118 +235,79 @@ export function FlyerBuilder({
         )}
       </div>
 
-      {/* Source mode selector - Upload/URL only */}
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant={source === "upload" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSource("upload")}
-          className="flex-1"
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          Upload
-        </Button>
-        <Button
-          type="button"
-          variant={source === "url" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSource("url")}
-          className="flex-1"
-        >
-          <LinkIcon className="w-4 h-4 mr-2" />
-          URL
-        </Button>
-      </div>
-
-      {/* Mode-specific content */}
-      <div className="min-h-[60px]">
-        {source === "upload" && (
-          <div className="space-y-2">
+      {/* Actions - minimal icon buttons */}
+      <div className="flex items-center gap-2">
+        {showUrlInput ? (
+          <div className="flex-1 flex gap-2">
+            <Input
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://..."
+              className="flex-1 h-9"
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && handleLoadUrl()}
+            />
             <Button
               type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full"
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 shrink-0"
+              onClick={() => {
+                setShowUrlInput(false);
+                setUrlInput("");
+              }}
             >
-              <Upload className="w-4 h-4 mr-2" />
-              {hasImage ? "Replace image" : "Choose image"}
+              <X className="w-4 h-4" />
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              JPEG, PNG, WebP, or GIF up to 15MB
-            </p>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="h-9 w-9 shrink-0"
+              onClick={handleLoadUrl}
+              disabled={!urlInput.trim() || isLoadingUrl}
+            >
+              {isLoadingUrl ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
+            </Button>
           </div>
-        )}
-
-        {source === "url" && (
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleLoadUrl}
-                disabled={isLoadingUrl || !urlInput.trim()}
-              >
-                {isLoadingUrl ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ExternalLink className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Enter a direct link to an image
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* AI Generate - separate action with visual distinction */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-muted-foreground/20" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-background px-2 text-muted-foreground">or</span>
-        </div>
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={handleGenerate}
-        disabled={isGenerating || !title.trim()}
-        className="w-full border-dashed"
-      >
-        {isGenerating ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Generating...
-          </>
         ) : (
           <>
-            <Sparkles className="w-4 h-4 mr-2" />
-            Generate with AI
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="h-9 w-9"
+              onClick={() => setShowUrlInput(true)}
+            >
+              <LinkIcon className="w-4 h-4" />
+            </Button>
+            <div className="flex-1" />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="h-9 w-9 border-dashed"
+              onClick={handleGenerate}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+            </Button>
           </>
         )}
-      </Button>
-      {!title.trim() && (
-        <p className="text-xs text-muted-foreground text-center">
-          Enter an event title to enable AI generation
-        </p>
-      )}
+      </div>
 
-      {/* Error display */}
-      {error && <p className="text-sm text-destructive text-center">{error}</p>}
+      {/* Error - only when needed */}
+      {error && (
+        <p className="text-sm text-destructive text-center">{error}</p>
+      )}
 
       {/* Hidden file input */}
       <input
