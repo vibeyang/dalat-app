@@ -1,4 +1,42 @@
+// UI locales (for static translations in messages/*.json)
 export type Locale = 'en' | 'fr' | 'vi';
+
+// Content locales - The Global Twelve (for user-generated content translation)
+export type ContentLocale = 'en' | 'vi' | 'ko' | 'zh' | 'ru' | 'fr' | 'ja' | 'ms' | 'th' | 'de' | 'es' | 'id';
+
+export const CONTENT_LOCALES: ContentLocale[] = ['en', 'vi', 'ko', 'zh', 'ru', 'fr', 'ja', 'ms', 'th', 'de', 'es', 'id'];
+
+export const LOCALE_FLAGS: Record<ContentLocale, string> = {
+  en: '🇬🇧', vi: '🇻🇳', ko: '🇰🇷', zh: '🇨🇳',
+  ru: '🇷🇺', fr: '🇫🇷', ja: '🇯🇵', ms: '🇲🇾',
+  th: '🇹🇭', de: '🇩🇪', es: '🇪🇸', id: '🇮🇩'
+};
+
+export const LOCALE_NAMES: Record<ContentLocale, string> = {
+  en: 'English', vi: 'Tiếng Việt', ko: '한국어', zh: '中文',
+  ru: 'Русский', fr: 'Français', ja: '日本語', ms: 'Bahasa Melayu',
+  th: 'ไทย', de: 'Deutsch', es: 'Español', id: 'Indonesia'
+};
+
+// Translation types
+export type TranslationStatus = 'auto' | 'reviewed' | 'edited';
+export type TranslationContentType = 'event' | 'moment' | 'profile';
+export type TranslationFieldName = 'title' | 'description' | 'text_content' | 'bio';
+
+export interface ContentTranslation {
+  id: string;
+  content_type: TranslationContentType;
+  content_id: string;
+  source_locale: ContentLocale;
+  target_locale: ContentLocale;
+  field_name: TranslationFieldName;
+  translated_text: string;
+  translation_status: TranslationStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 // Extended role hierarchy
 export type UserRole =
@@ -39,6 +77,7 @@ export interface Profile {
   username: string | null;
   display_name: string | null;
   bio: string | null;
+  bio_source_locale: string | null;
   avatar_url: string | null;
   locale: Locale;
   role: UserRole;
@@ -150,6 +189,8 @@ export interface Event {
   created_by: string;
   created_at: string;
   updated_at: string;
+  // Translation tracking
+  source_locale: string | null;
   // Series fields (for recurring event instances)
   series_id: string | null;
   series_instance_date: string | null;
@@ -404,6 +445,7 @@ export interface Moment {
   text_content: string | null;
   status: MomentStatus;
   moderation_note: string | null;
+  source_locale: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
