@@ -155,7 +155,7 @@ export default async function Home({ searchParams }: PageProps) {
       {/* Mobile: Full immersive experience */}
       <div className="lg:hidden h-[100dvh] relative">
         {/* Floating mini-header */}
-        <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 via-black/40 to-transparent">
+        <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 bg-gradient-to-b from-black/90 via-black/70 to-black/20 backdrop-blur-sm">
           <div className="flex items-center gap-1">
             <Link href="/" className="font-bold text-white text-sm drop-shadow-lg">
               dalat.app
