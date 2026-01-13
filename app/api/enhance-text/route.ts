@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { text, context } = await request.json();
+    const { text, context, direction } = await request.json();
 
     if (!text?.trim()) {
       return NextResponse.json(
@@ -14,21 +14,35 @@ export async function POST(request: Request) {
 
     const client = new Anthropic();
 
-    const systemPrompt = `You are a helpful writing assistant. Improve the user's text to be more clear, engaging, and well-written while preserving their original meaning and intent.
-
-Guidelines:
-- Keep the same tone and style (casual/formal)
+    // Base guidelines
+    let guidelines = `Guidelines:
 - Fix grammar and spelling
-- Make it more concise if verbose
-- Make it more engaging if bland
 - Preserve any important details
 - Keep similar length (don't over-expand)
 - Support Vietnamese and English text
 - Return ONLY the improved text, no explanations`;
 
-    const userPrompt = context
-      ? `Context: This is ${context}\n\nText to improve:\n${text}`
-      : `Text to improve:\n${text}`;
+    // Add direction-specific instructions
+    if (direction) {
+      guidelines = `User's direction: "${direction}"
+
+${guidelines}
+- Follow the user's direction above as the primary goal`;
+    } else {
+      guidelines = `${guidelines}
+- Keep the same tone and style (casual/formal)
+- Make it more concise if verbose
+- Make it more engaging if bland`;
+    }
+
+    const systemPrompt = `You are a helpful writing assistant. Improve the user's text to be more clear, engaging, and well-written while preserving their original meaning and intent.
+
+${guidelines}`;
+
+    let userPrompt = `Text to improve:\n${text}`;
+    if (context) {
+      userPrompt = `Context: This is ${context}\n\n${userPrompt}`;
+    }
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",

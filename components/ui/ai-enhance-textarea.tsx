@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { EnhancePopover } from "@/components/ui/enhance-popover";
 import { cn } from "@/lib/utils";
 
 interface AIEnhanceTextareaProps
@@ -36,9 +37,11 @@ const AIEnhanceTextarea = React.forwardRef<
     ref
   ) => {
     const [isEnhancing, setIsEnhancing] = React.useState(false);
+    const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [internalValue, setInternalValue] = React.useState(
       defaultValue ?? ""
     );
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
 
     // Support both controlled and uncontrolled modes
     const isControlled = controlledValue !== undefined;
@@ -53,7 +56,7 @@ const AIEnhanceTextarea = React.forwardRef<
       }
     };
 
-    const handleEnhance = async () => {
+    const handleEnhance = async (direction?: string) => {
       if (!value.trim() || isEnhancing) return;
 
       setIsEnhancing(true);
@@ -61,7 +64,7 @@ const AIEnhanceTextarea = React.forwardRef<
         const response = await fetch("/api/enhance-text", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: value, context }),
+          body: JSON.stringify({ text: value, context, direction }),
         });
 
         if (!response.ok) {
@@ -95,24 +98,35 @@ const AIEnhanceTextarea = React.forwardRef<
           {...props}
         />
         {showButton && (
-          <button
-            type="button"
-            onClick={handleEnhance}
-            disabled={isEnhancing}
-            className={cn(
-              "absolute bottom-2 right-2 p-1.5 rounded-md transition-all",
-              "text-muted-foreground hover:text-foreground hover:bg-muted",
-              "active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
-              isEnhancing && "animate-pulse"
-            )}
-            title="Enhance with AI"
-          >
-            {isEnhancing ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
-          </button>
+          <>
+            <button
+              ref={buttonRef}
+              type="button"
+              onClick={() => setIsPopoverOpen(!isPopoverOpen)}
+              disabled={isEnhancing}
+              className={cn(
+                "absolute bottom-2 right-2 p-1.5 rounded-md transition-all",
+                "text-muted-foreground hover:text-foreground hover:bg-muted",
+                "active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
+                isPopoverOpen && "text-violet-400 bg-violet-500/10",
+                isEnhancing && "animate-pulse"
+              )}
+              title="Enhance with AI"
+            >
+              {isEnhancing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+            </button>
+            <EnhancePopover
+              isOpen={isPopoverOpen}
+              onClose={() => setIsPopoverOpen(false)}
+              onEnhance={handleEnhance}
+              isEnhancing={isEnhancing}
+              triggerRef={buttonRef}
+            />
+          </>
         )}
       </div>
     );
